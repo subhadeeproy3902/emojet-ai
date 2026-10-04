@@ -85,7 +85,9 @@ Runs in parallel with Phase 1 (same encoder, so phone speed results carry over).
 4. **[You]** Choose where the full training runs (laptop GPU vs free Kaggle GPU); [Claude] runs or prepares it.
 5. [Claude] Convert to GGUF Q4_0, verify, A/B against the mood model. Laya-Emoji replaces moods only if it wins on your test set.
 
-## Phase 2 — Android overlay app — ⬜
+## Phase 2 — Android overlay app — 🔄 first build done, waiting for phone test
+
+Status 2026-10-05: `android/` builds with `bash scripts/build-android.sh` → 8.4 MB debug / 7.3 MB release APK (Kotlin, plain views, AGP 9.4.1, Gradle 9.8, no libraries). Done: engine (1), model manager (2: DownloadManager, Wi-Fi only by default, sha256, fallback to the official 449 MB file while ours isn't published, import .gguf), AccessibilityService (3), overlay strip + insert at cursor (4), debounce/dedup with multi-emoji chaining (5), on/off switch (7, partial). Not yet: reply context (6), quick-settings tile / pause (7), per-app list + privacy page (8), Updates screen (9), signed release (10).
 
 1. [Claude] Engine service: starts `llama-server` from the APK's native-lib folder on a random localhost port + random API key, loads the model once, stops after idle.
 2. [Claude] Model manager: first-run download (pinned revision, sha256, resumable, Wi-Fi only), GitHub mirror fallback, "import .gguf" button.

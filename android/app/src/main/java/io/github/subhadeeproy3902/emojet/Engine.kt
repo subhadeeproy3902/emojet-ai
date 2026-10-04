@@ -19,19 +19,18 @@ class Engine private constructor(private val app: Context) {
     private var port = 0
     private val apiKey = UUID.randomUUID().toString()
 
-    val modelFile: File get() = File(app.getExternalFilesDir(null), MODEL_NAME)
-    val isModelPresent: Boolean get() = modelFile.isFile && modelFile.length() > 100_000_000
+    private val models = ModelManager(app)
     val isRunning: Boolean @Synchronized get() = process?.isAlive == true
 
     /** Starts the engine if needed and waits until it answers. Call from a background thread. */
     @Synchronized
     fun start(): Boolean {
         if (process?.isAlive == true) return true
-        if (!isModelPresent) return false
+        val model = models.installed() ?: return false
         port = ServerSocket(0).use { it.localPort }
         val bin = File(app.applicationInfo.nativeLibraryDir, "libllama_server.so")
         process = ProcessBuilder(
-            bin.path, "-m", modelFile.path,
+            bin.path, "-m", models.fileOf(model).path,
             "--host", "127.0.0.1", "--port", port.toString(), "--api-key", apiKey,
             "-t", fastCores().toString(),
             "-c", "512", "-b", "512", "-ub", "512", "-np", "1", "--cache-ram", "0", "--no-webui",
@@ -93,8 +92,6 @@ class Engine private constructor(private val app: Context) {
     }
 
     companion object {
-        const val MODEL_NAME = "Laya-Q4_0.gguf"
-
         @Volatile
         private var instance: Engine? = null
 

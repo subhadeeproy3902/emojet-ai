@@ -56,6 +56,14 @@ Tick each, and send Claude a one-line result per phase, e.g. *"Phase 1: 420 ms m
 - [ ] Type a few of your own messages in the Lab text box; does the row feel right and quick?
 - [ ] After ~5 minutes of use: phone noticeably warm? battery drop?
 
+### Phase 2 — installing a test build (Claude does this while the phone is plugged in)
+
+1. `bash scripts/build-android.sh` → `android/app/build/outputs/apk/debug/app-debug.apk`
+2. `adb install -r <apk>` (Install via USB is on; without it, `adb push` the APK to Downloads and tap it).
+3. Model: tap **Download the Laya model** in the app, or for quick dev tests `adb push models/Laya-Q4_0.gguf /sdcard/Android/data/io.github.subhadeeproy3902.emojet/files/`.
+4. In the app: step 2 (App info → ⋮ → Allow restricted settings) if needed, then step 1 (Accessibility → EmoJet → on).
+5. **Run engine self-test** → should show 🎉🥳… in ~0.3–0.5 s.
+
 ### Phase 2 — overlay in real apps
 - [ ] Install the APK, go through every permission screen (restricted settings, accessibility, display over apps, battery unrestricted). Note any screen that was confusing.
 - [ ] WhatsApp: type 10+ messages in 2 chats. Strip appears after a pause, near the field, never covering the Send button.

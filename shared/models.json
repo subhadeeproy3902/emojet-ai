@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "note": "Model files the app/extension may download, in order of preference. The first one whose download works is used. Pinned URLs + sha256: an upstream change can't silently change installed apps.",
+  "models": [
+    {
+      "id": "laya-q4_0",
+      "file": "Laya-Q4_0.gguf",
+      "size": 252225888,
+      "sha256": "14b4d697bdd5fdfa0ab920145526346435b41507f80a0341ab8181462fd06bfb",
+      "label": "Laya 4-bit (252 MB, fastest)",
+      "urls": [
+        "https://github.com/subhadeeproy3902/emojet/releases/download/model-laya-q4_0-v1/Laya-Q4_0.gguf"
+      ]
+    },
+    {
+      "id": "laya-q8_0",
+      "file": "Laya-Q8_0.gguf",
+      "size": 449397600,
+      "sha256": "c06528c5746d3bb8baa72a27938be95abbfd0b226f8471e8a9e365ed0bb066d2",
+      "label": "Laya 8-bit (449 MB, official ggml-org file)",
+      "urls": [
+        "https://huggingface.co/ggml-org/Laya-GGUF/resolve/22265007700297ba9e128297e82540cf28c5d7d4/Laya-Q8_0.gguf"
+      ]
+    }
+  ]
+}

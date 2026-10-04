@@ -60,6 +60,7 @@ On HyperOS, an overlay app needs more than stock Android: Settings → Apps → 
 - [x] **Model delivery** — decided 2026-10-05: small APK, model downloaded on first launch.
 - [x] **Updates** — decided 2026-10-05: from inside the app / extension, no uninstall ([WORKFLOWS.md](WORKFLOWS.md) §4).
 - [ ] **Model size** after Phase 1: Q4_0 (252 MB) is the current pick; confirm after the phone test.
+- [ ] **OK to publish the 252 MB model file?** The app downloads it from a GitHub pre-release `model-laya-q4_0-v1` on your repo (public, free, with the Apache-2.0 licence + credit to Laya). Until you say yes, the app downloads the official 449 MB 8-bit file from Hugging Face instead (works, just bigger and a bit slower).
 - [x] **Icon** — owner's logo + favicons (`assets/brand/`).
 
 ## C. Hands-on tests (details in [TESTING.md](TESTING.md))
