@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EmoJet</string>
+    <string name="service_name">EmoJet emoji suggestions</string>
+    <string name="service_description">EmoJet reads the text field you are typing in (never password fields) and suggests emojis that fit your whole message. Everything runs on this phone with the Laya model: nothing you type is stored or sent anywhere.</string>
+</resources>
