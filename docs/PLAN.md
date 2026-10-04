@@ -61,16 +61,18 @@ Legend: **[Claude]** done by Claude · **[You]** needs your phone / password / a
 
 **Exit:** test-set score ≥ target, mood list approved by you.
 
-## Phase 1 — Is it fast enough on your phone? — ⬜
+## Phase 1 — Is it fast enough on your phone? — ✅ yes (2026-10-05)
+
+**Result:** REDMI Note 17 Pro 5G, 4 threads: **~306–356 ms per suggestion**, same accuracy as the laptop, ~230 MB RAM (RESEARCH.md §4). Done with a command-line build over adb — the "EmoJet Lab" app was not needed for the measurement; its pieces move into Phase 2.
 
 The biggest unknown. Laptop: ~390 ms. A phone CPU is typically 2–4× slower, so expect ~0.8–1.5 s unless a GPU backend or fewer tokens help. Measure before building UI.
 
-1. [Claude] Install Android SDK + NDK (after your JDK install).
-2. [Claude] Cross-compile `llama-server` for `arm64-v8a` (CPU, with ARM dot-product / i8mm kernels).
+1. ✅ [Claude] Install Android SDK + NDK.
+2. ✅ [Claude] Cross-compile `llama-server` for `arm64-v8a` with KleidiAI (portable, fast Q4_0) — `~/build/llama.cpp/build-android`.
 3. [Claude] "EmoJet Lab": a bare test app — text box, Run button, shows mood + emoji row + milliseconds, runs the full 23-sample benchmark with one tap. Model copied with `adb push` (no download code yet).
-4. **[You]** Install via adb (Claude runs it while the phone is plugged in), press the benchmark button, send Claude the screenshot / numbers.
+4. ✅ Measured over adb with `bash scripts/phone-bench.sh` (no app needed).
 5. [Claude] Experiments on your phone: 8-bit vs 4-bit, 2/4/6 threads, OpenCL (Adreno) / Vulkan GPU backends if your chip has them, fewer moods (e.g. 16) to shorten the prompt.
-6. **Go / no-go** with you: pick model file + settings. Target: suggestion within ~600 ms of a typing pause on your phone.
+6. ✅ **Go**: Q4_0, 4 threads, CPU. Target ≤ 600 ms met.
 
 ## Phase T — Train Laya-Emoji (all 1,923 emojis, whole sentence) — ⬜
 

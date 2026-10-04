@@ -4,7 +4,7 @@ Claude does all the coding, building, local installs in your home folder, testin
 
 ## ★ Before the next build session — do these, in this order
 
-1. **Phone ready** (§A step 3): OS version ×7 → Developer options → USB debugging **on** → plug in → "Allow USB debugging?" → Always allow. Leave it plugged in when the session starts.
+1. ✅ **Phone ready** (done 2026-10-05: USB debugging + Install via USB on, signed in). (§A step 3): OS version ×7 → Developer options → USB debugging **on** → plug in → "Allow USB debugging?" → Always allow. Leave it plugged in when the session starts.
    - **Install via USB** is optional. It needs a Xiaomi account: check Settings (top of the list) — if already signed in, turn it on; if not, either create a free one (Settings → Xiaomi Account → Create account, phone number + SMS) or skip it.
    - Without it, Claude copies the APK to the phone over the cable (`adb push`) and you tap it in Files → Downloads → Install. Same path real users take.
    - ⚠️ Never sign out of / reset a phone signed in to a Xiaomi account whose password you don't know (Find Device lock).
@@ -37,7 +37,7 @@ Nothing to install with sudo for this step. (Kaggle's command-line tool is only 
   - `android-udev` — lets your normal user talk to the phone over USB (no root).
 
   Done: Claude installed the Android SDK 36 + NDK r30 into `~/Android/Sdk` (2.7 GB, no sudo).
-- [ ] **3. Phone → developer mode (Redmi / Xiaomi HyperOS)**:
+- [x] **3. Phone → developer mode (Redmi / Xiaomi HyperOS)** — done 2026-10-05:
   1. Settings → About phone → tap **OS version** 7 times (on Xiaomi it's "OS version", not "Build number").
   2. Settings → Additional settings → **Developer options**:
      - turn on **USB debugging**;

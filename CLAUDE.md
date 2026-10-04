@@ -18,6 +18,7 @@ Start every session by reading `docs/PLAN.md` (phases, status, decisions) and `d
 
 - Repo lives on E: (`/mnt/shared/EndeavourOS/emojet`, NTFS, **no exec bit**) → run scripts with `bash`/`python3`; binaries and SDKs live in `/home`.
 - llama.cpp built from source: `~/build/llama.cpp/build/bin/` (Laya `/v1/systemone` support, PR #29818). Android SDK + NDK r30: `~/Android/Sdk`. JDK 21 + adb installed.
+- Android engine build: `~/build/llama.cpp/build-android` (NDK r30, arm64-v8a, KleidiAI). Phone test: `bash scripts/phone-bench.sh` (owner's REDMI Note 17 Pro 5G, adb serial 4b8ff91f; 4 threads best, ~306–356 ms).
 - Models in `models/` (gitignored): `bash scripts/get-model.sh`, `bash scripts/quantize.sh Q4_0`.
 - Dev server: `bash scripts/dev-server.sh &` → `python3 scripts/test-prompts.py` (moods) / `python3 scripts/test-tones.py` (tone). Stop with `pkill -x llama-server`.
 - Machine changes are also logged in `~/CHANGELOG.md` (the owner's system log).

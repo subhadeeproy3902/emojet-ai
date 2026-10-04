@@ -10,17 +10,17 @@ The only AI inside is **[Laya](https://huggingface.co/convaiinnovations/laya)** 
 
 Laya reads your draft (and the message you're replying to) and picks its **mood** from ~25 word labels — `laughing`, `grateful`, `tired`, `food` … — in a single forward pass. EmoJet turns the top moods into a row of 6 emojis ([`shared/moods.json`](shared/moods.json)). Asking Laya for emojis directly doesn't work (emojis are too many tokens for its option budget); moods do. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Status — Phase 0 done (laptop proof)
+## Status — Phase 0 (laptop) + Phase 1 (phone) done
 
-| | Result (laptop CPU, 4 threads) |
+| | Result (CPU, 4 threads) |
 |---|---|
 | Right mood first try / in top 3 | 18/23 · 22/23 |
-| Time per suggestion | ~183 ms |
+| Time per suggestion | ~183 ms laptop · **~306–356 ms on a REDMI Note 17 Pro 5G** (phone CPU, 4 threads) |
 | Model file | 252 MB (Laya, 4-bit Q4_0) |
 | Memory | ~265 MB |
 | Reply-aware | 3/3 reply cases right with context, 0/3 without |
 
-Next: Phase 1 — measure speed on a real phone — and Phase T — train **Laya-Emoji**, a fine-tuned Laya that reads the whole message and scores all 1,923 distinct emojis of Unicode 18.0 (3,963 with skin tones) in one pass, plus the **tone of voice** (4 communication styles, 46 tones — sarcastic, passive-aggressive, empathetic, …) so emojis match how you're saying it ([docs/TRAINING.md](docs/TRAINING.md)). Full roadmap: [docs/PLAN.md](docs/PLAN.md). What the owner has to do by hand: [docs/MANUAL-WORK.md](docs/MANUAL-WORK.md).
+Phase 1 (phone speed) passed. Next: Phase T — train **Laya-Emoji**, a fine-tuned Laya that reads the whole message and scores all 1,923 distinct emojis of Unicode 18.0 (3,963 with skin tones) in one pass, plus the **tone of voice** (4 communication styles, 46 tones — sarcastic, passive-aggressive, empathetic, …) so emojis match how you're saying it ([docs/TRAINING.md](docs/TRAINING.md)). Full roadmap: [docs/PLAN.md](docs/PLAN.md). What the owner has to do by hand: [docs/MANUAL-WORK.md](docs/MANUAL-WORK.md).
 
 ## Try the engine on a laptop
 

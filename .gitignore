@@ -11,6 +11,8 @@ android/local.properties
 *.apk
 *.aab
 
+.env
+
 # Browser extension
 extension/node_modules/
 extension/dist/

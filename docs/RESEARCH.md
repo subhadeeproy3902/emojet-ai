@@ -73,9 +73,24 @@ Differences of ±1 sample are noise at n=23, but Q4_0 is clearly not worse and i
 - Probabilities are very peaky (often 1.00), so blending the top 3 moods rarely mixes rows. Try flattening on the client (e.g. `p^0.3` before blending) so the 2nd mood contributes.
 - 23 samples is too few to tune on without overfitting → needs the owner's ~50 real-style messages (MANUAL-WORK §B).
 
-## 4. Phone expectations (to be measured in Phase 1)
+## 4. Phone measurement (2026-10-05) — Phase 1 answered
 
-Laptop ≈ 190 ms at 4 threads for an ~80-token prompt. Phone big cores are roughly 2–4× slower for this kind of math → expect ~0.4–0.8 s on a recent mid/high-end phone, more on budget chips. Levers: fewer moods (shorter prompt), shorter state, GPU backends (OpenCL on Adreno, Vulkan), and the optional instant keyword layer to hide the wait.
+Phone: **REDMI Note 17 Pro 5G** (HyperOS 3.0, Android 16), Qualcomm SM6435 — 4× Cortex-A78 + 4× Cortex-A55, dot-product instructions (no i8mm), Adreno GPU, 8 GB RAM.
+
+Build: `llama-server` cross-compiled with NDK r30, `arm64-v8a`, **KleidiAI on** (runtime-dispatched Arm kernels for Q4_0/Q8_0 → one portable build for any arm64 phone), stripped to 13 MB. Run from `/data/local/tmp` over adb, laptop sends the same 23 samples (`bash scripts/phone-bench.sh`).
+
+| Threads | Median per suggestion |
+|---|---|
+| 2 | 559 ms |
+| **4** | **306–356 ms** |
+| 6 | 455 ms |
+| 8 | 387 ms |
+
+- Same accuracy as the laptop (18/23 first mood, 22/23 top 3) — the phone build gives identical answers.
+- Real memory ~230–254 MB (plus the model file in the page cache, which Android can drop).
+- 4 threads = the 4 fast cores; adding the slow cores makes it slower. The app will use the number of fast cores (fallback 4).
+- Target was ≤ 600 ms → met with margin on CPU alone. GPU backends (OpenCL/Vulkan on Adreno) are optional future work, not needed.
+- Laya-Emoji's prompt is just the message (~25–40 tokens vs ~80 now), so it should be roughly 2× faster on the same phone.
 
 ## 5. Tone of voice (2026-10-04)
 
