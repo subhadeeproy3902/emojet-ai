@@ -44,9 +44,13 @@ Claude prepares the dataset and the training notebook, sends it to Kaggle with t
 ## 2. Installing (each user, once)
 
 ```
-download small APK (~15 MB) from GitHub → install → permissions (accessibility, overlay, battery)
-→ app downloads the model once (~250 MB, Wi-Fi) → ready, works offline
+download small APK (~8 MB) from GitHub → install → open EmoJet once
+→ the model starts downloading BY ITSELF (Wi-Fi only; "Use mobile data now" button; continues in the background, notification shows progress)
+→ meanwhile: permissions (accessibility, battery; Xiaomi pop-up permission)
+→ download done → checked (sha256) even if the app is closed → suggestions start working, offline from then on
 ```
+
+Source today: Laya's official 449 MB file on Hugging Face (our smaller / trained models are not published yet). When Laya-Emoji is published, it's added to `updates.json` → installed apps offer it under Model after "Check for updates".
 
 Extension: download zip → unzip → Load unpacked → the extension downloads the model once.
 

@@ -31,6 +31,7 @@ class MainActivity : Activity() {
     private lateinit var modelActions: LinearLayout
     private lateinit var upgradeButton: Button
     private lateinit var cancelButton: Button
+    private lateinit var mobileNowButton: Button
     private lateinit var mobileData: Switch
     private lateinit var status: TextView
     private lateinit var pauseButton: Button
@@ -73,6 +74,7 @@ class MainActivity : Activity() {
         })
         col.addView(modelActions)
         upgradeButton = button("Download the newer model") { models.startDownload(mobileData.isChecked); refresh() }.also { col.addView(it) }
+        mobileNowButton = button("Use mobile data now") { models.allowMobileDataNow(); refresh() }.also { col.addView(it) }
         cancelButton = button("Cancel download") { models.cancel(); refresh() }.also { col.addView(it) }
 
         // ---- Setup
@@ -125,6 +127,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        models.autoStartOnce()           // first launch: the model downloads by itself (Wi-Fi only)
         main.post(ticker)
     }
 
@@ -158,12 +161,15 @@ class MainActivity : Activity() {
             is ModelManager.State.Downloading -> {
                 val pct = if (state.total > 0) state.done * 100 / state.total else 0
                 "Downloading ${state.label}: $pct % (${state.done / 1_000_000} / ${state.total / 1_000_000} MB)" +
-                    (state.waiting?.let { " — $it" } ?: "")
+                    (state.waiting?.let { " — $it" } ?: "") +
+                    "\nIt continues in the background; you can leave the app."
             }
         }
         val idle = state is ModelManager.State.Missing || state is ModelManager.State.Failed
         modelActions.visibility = if (idle) View.VISIBLE else View.GONE
         cancelButton.visibility = if (state is ModelManager.State.Downloading) View.VISIBLE else View.GONE
+        mobileNowButton.visibility =
+            if (state is ModelManager.State.Downloading && state.waiting == "waiting for Wi-Fi") View.VISIBLE else View.GONE
         val upgrade = if (state is ModelManager.State.Ready) models.upgradeAvailable() else null
         upgradeButton.visibility = if (upgrade != null) View.VISIBLE else View.GONE
         upgrade?.let { upgradeButton.text = "Download the newer model: ${it.label}" }

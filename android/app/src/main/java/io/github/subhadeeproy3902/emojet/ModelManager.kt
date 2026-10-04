@@ -65,6 +65,20 @@ class ModelManager(context: Context) {
         else enqueue(first, 0)
     }
 
+    /** First launch: start the download by itself (Wi-Fi only) unless it already ran or a model is present. */
+    fun autoStartOnce(): Boolean {
+        if (prefs.getBoolean("auto_started", false) || installed() != null || prefs.contains("id")) return false
+        prefs.edit().putBoolean("auto_started", true).apply()
+        startDownload(allowMobileData = false)
+        return true
+    }
+
+    /** "Use mobile data now": restart the waiting download with mobile data allowed. */
+    fun allowMobileDataNow() {
+        cancel()
+        startDownload(allowMobileData = true)
+    }
+
     /** Next model that can be downloaded after index [from], or -1. Unpublished models have no URLs. */
     private fun nextDownloadable(from: Int) = (from + 1 until models.size).firstOrNull { models[it].urls.isNotEmpty() } ?: -1
 
@@ -81,11 +95,12 @@ class ModelManager(context: Context) {
         prefs.edit().putLong("id", dm.enqueue(request)).putInt("model", model).putInt("url", url).apply()
     }
 
-    /** Current state; call every second or so while a screen shows progress. */
-    fun poll(): State {
+    /** Current state; call every second or so while a screen shows progress.
+     *  blocking = verify a finished download on this thread (used by the download-done receiver). */
+    fun poll(blocking: Boolean = false): State {
         installed()?.let { if (!prefs.contains("id")) return State.Ready(it) }
         prefs.getString("error", null)?.let { return State.Failed(it) }
-        if (prefs.getBoolean("verifying", false)) return State.Verifying
+        if (System.currentTimeMillis() - prefs.getLong("verifying_at", 0) < 60_000) return State.Verifying
         val id = prefs.getLong("id", -1)
         if (id < 0) return State.Missing
         val modelIdx = prefs.getInt("model", 0)
@@ -102,8 +117,9 @@ class ModelManager(context: Context) {
             val reason = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
             return when (status) {
                 DownloadManager.STATUS_SUCCESSFUL -> {
-                    verifyInBackground(m)
-                    State.Verifying
+                    if (blocking) verify(m) else verifyInBackground(m)
+                    if (blocking) installed()?.let { State.Ready(it) } ?: State.Failed(prefs.getString("error", null) ?: "Check failed.")
+                    else State.Verifying
                 }
                 DownloadManager.STATUS_FAILED -> {
                     // Try the next URL, then the next model (e.g. our file not published yet -> official file).
@@ -126,24 +142,27 @@ class ModelManager(context: Context) {
 
     fun cancel() {
         prefs.getLong("id", -1).takeIf { it >= 0 }?.let { dm.remove(it) }
-        prefs.edit().remove("id").remove("error").remove("verifying").apply()
+        prefs.edit().remove("id").remove("error").remove("verifying_at").apply()
     }
 
     private fun verifyInBackground(m: Model) {
-        if (prefs.getBoolean("verifying", false)) return
-        prefs.edit().putBoolean("verifying", true).apply()
-        Thread {
-            val part = File(dir, m.file + ".part")
-            val ok = part.isFile && part.length() == m.size && sha256(part.inputStream()) == m.sha256
-            val editor = prefs.edit().remove("verifying").remove("id")
-            if (ok) {
-                part.renameTo(fileOf(m))
-            } else {
-                part.delete()
-                editor.putString("error", "The downloaded file was damaged (checksum mismatch). Try again.")
-            }
-            editor.apply()
-        }.start()
+        Thread { verify(m) }.start()
+    }
+
+    /** Checksum the finished download and move it into place. One at a time per process (screen + receiver). */
+    private fun verify(m: Model) = synchronized(VERIFY_LOCK) {
+        if (!prefs.contains("id")) return@synchronized            // someone else finished it
+        prefs.edit().putLong("verifying_at", System.currentTimeMillis()).apply()
+        val part = File(dir, m.file + ".part")
+        val ok = part.isFile && part.length() == m.size && sha256(part.inputStream()) == m.sha256
+        val editor = prefs.edit().remove("verifying_at").remove("id")
+        if (ok) {
+            part.renameTo(fileOf(m))
+        } else {
+            part.delete()
+            editor.putString("error", "The downloaded file was damaged (checksum mismatch). Try again.")
+        }
+        editor.apply()
     }
 
     /** Import a .gguf picked by the user; accepted only if it is byte-identical to a known model. */
@@ -186,6 +205,7 @@ class ModelManager(context: Context) {
 
     companion object {
         private const val REMOTE_LIST = "models-remote.json"
+        private val VERIFY_LOCK = Any()
 
         fun saveRemoteList(context: Context, json: String) =
             File(context.applicationContext.filesDir, REMOTE_LIST).writeText(json)

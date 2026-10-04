@@ -1,16 +1,14 @@
 {
   "version": 1,
-  "note": "Model files the app/extension may download, in order of preference. The first one whose download works is used. Pinned URLs + sha256: an upstream change can't silently change installed apps.",
+  "note": "Model files in order of preference; the app uses the first one present and auto-downloads the first one that has URLs. Entries without URLs are not published yet (arrive by USB / import). Pinned URLs + sha256.",
   "models": [
     {
       "id": "laya-q4_0",
       "file": "Laya-Q4_0.gguf",
       "size": 252225888,
       "sha256": "14b4d697bdd5fdfa0ab920145526346435b41507f80a0341ab8181462fd06bfb",
-      "label": "Laya 4-bit (252 MB, fastest)",
-      "urls": [
-        "https://github.com/subhadeeproy3902/emojet/releases/download/model-laya-q4_0-v1/Laya-Q4_0.gguf"
-      ]
+      "label": "Laya 4-bit (252 MB, fastest; not published yet)",
+      "urls": []
     },
     {
       "id": "laya-q8_0",
