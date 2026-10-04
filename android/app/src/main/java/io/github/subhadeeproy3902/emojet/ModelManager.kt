@@ -30,20 +30,33 @@ class ModelManager(context: Context) {
     private val dm = app.getSystemService(DownloadManager::class.java)
     private val prefs = app.getSharedPreferences("models", Context.MODE_PRIVATE)
 
-    val models: List<Model> = JSONObject(app.assets.open("models.json").bufferedReader().use { it.readText() })
-        .getJSONArray("models").let { arr ->
-            List(arr.length()) { i ->
-                val m = arr.getJSONObject(i)
-                val urls = m.getJSONArray("urls")
-                Model(m.getString("id"), m.getString("file"), m.getLong("size"), m.getString("sha256"),
-                    m.getString("label"), List(urls.length()) { urls.getString(it) }, m.optString("kind", "decision"))
-            }
+    /** Bundled shared/models.json, or a newer list saved by "Check for updates". */
+    private val listJson: JSONObject = run {
+        val bundled = JSONObject(app.assets.open("models.json").bufferedReader().use { it.readText() })
+        val remote = File(app.filesDir, REMOTE_LIST).takeIf { it.isFile }?.let { runCatching { JSONObject(it.readText()) }.getOrNull() }
+        if (remote != null && remote.optInt("version") > bundled.optInt("version")) remote else bundled
+    }
+    val listVersion: Int get() = listJson.optInt("version")
+
+    val models: List<Model> = listJson.getJSONArray("models").let { arr ->
+        List(arr.length()) { i ->
+            val m = arr.getJSONObject(i)
+            val urls = m.getJSONArray("urls")
+            Model(m.getString("id"), m.getString("file"), m.getLong("size"), m.getString("sha256"),
+                m.getString("label"), List(urls.length()) { urls.getString(it) }, m.optString("kind", "decision"))
         }
+    }
 
     /** The best model file that is fully present (size check; sha256 was checked when it arrived). */
     fun installed(): Model? = models.firstOrNull { File(dir, it.file).let { f -> f.isFile && f.length() == it.size } }
 
     fun fileOf(m: Model) = File(dir, m.file)
+
+    /** A better model (earlier in the list) than the installed one, e.g. after "Check for updates". */
+    fun upgradeAvailable(): Model? {
+        val current = installed() ?: return null
+        return models.first().takeIf { it.id != current.id }
+    }
 
     fun startDownload(allowMobileData: Boolean) {
         prefs.edit().putBoolean("mobile", allowMobileData).remove("error").apply()
@@ -164,5 +177,12 @@ class ModelManager(context: Context) {
             }
         }
         return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    companion object {
+        private const val REMOTE_LIST = "models-remote.json"
+
+        fun saveRemoteList(context: Context, json: String) =
+            File(context.applicationContext.filesDir, REMOTE_LIST).writeText(json)
     }
 }

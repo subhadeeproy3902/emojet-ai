@@ -19,14 +19,17 @@ class Engine private constructor(private val app: Context) {
     private var port = 0
     private val apiKey = UUID.randomUUID().toString()
 
-    private val models = ModelManager(app)
+    private val models get() = ModelManager(app)
+    private var modelId: String? = null
     val isRunning: Boolean @Synchronized get() = process?.isAlive == true
 
     /** Starts the engine if needed and waits until it answers. Call from a background thread. */
     @Synchronized
     fun start(): Boolean {
-        if (process?.isAlive == true) return true
         val model = models.installed() ?: return false
+        if (process?.isAlive == true && model.id == modelId) return true
+        process?.destroy()                      // a new model arrived: restart on it
+        modelId = model.id
         kind = model.kind
         port = ServerSocket(0).use { it.localPort }
         val bin = File(app.applicationInfo.nativeLibraryDir, "libllama_server.so")

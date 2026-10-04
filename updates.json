@@ -1,0 +1,10 @@
+{
+  "note": "Read by the app's and extension's 'Check for updates'. Bump app.versionCode + add apk {url, sha256, size} for a new APK; put a newer model list (shared/models.json format, higher version) under models to roll out a new model.",
+  "app": {
+    "versionCode": 1,
+    "versionName": "0.1.0",
+    "notes": "First test build.",
+    "apk": null
+  },
+  "models": null
+}

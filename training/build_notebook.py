@@ -193,7 +193,7 @@ except Exception as e:
     print("irony tweets skipped:", repr(e)[:200])
 
 # politeness
-pol = load_dataset("Cleanlab/stanford-politeness")["train"]
+pol = load_dataset("Cleanlab/stanford-politeness", data_files={"train": "fine-tuning/train.csv"})["train"]  # repo mixes CSV layouts
 RESP, RUDE = TONE_IDX["respectful"], TONE_IDX["rude"]
 for r in pol:
     c = r["completion"].strip().lower()

@@ -1,5 +1,14 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
+}
+
+// The owner's signing key lives outside the repo (~/.config/emojet). Same key for test and release
+// builds, so a test install can update in place to a release. Other builders get the debug key.
+val keyProps = Properties().apply {
+    val f = file("${System.getProperty("user.home")}/.config/emojet/keystore.properties")
+    if (f.isFile) f.inputStream().use { load(it) }
 }
 
 android {
@@ -15,8 +24,23 @@ android {
         ndk { abiFilters += listOf("arm64-v8a") }
     }
 
+    if (keyProps.isNotEmpty()) {
+        signingConfigs {
+            create("emojet") {
+                storeFile = file(keyProps.getProperty("storeFile"))
+                storePassword = keyProps.getProperty("storePassword")
+                keyAlias = keyProps.getProperty("keyAlias")
+                keyPassword = keyProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            if (keyProps.isNotEmpty()) signingConfig = signingConfigs.getByName("emojet")
+        }
         release {
+            if (keyProps.isNotEmpty()) signingConfig = signingConfigs.getByName("emojet")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
