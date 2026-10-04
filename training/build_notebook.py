@@ -233,7 +233,9 @@ for i, e in enumerate(catalog):
 
 # seeds (x25 with light variations)
 def seed_targets(s):
-    tones = {TONE_IDX[t]: 1.0 for t in s.get("tones", []) if t in TONE_IDX}
+    # hand-written: tones not listed are absent -> every tone gets negative examples too
+    tones = {i: 0.0 for i in range(NT)}
+    tones.update({TONE_IDX[t]: 1.0 for t in s.get("tones", []) if t in TONE_IDX})
     return emoji_ids(s["emojis"]), tones, STYLE_IDX.get(s.get("style"))
 for s in seeds:
     emo, tones, style = seed_targets(s)

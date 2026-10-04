@@ -5,7 +5,7 @@
   (a .ipynb file is pushed as a notebook, anything else as a script)
   python3 scripts/kaggle.py status emojet-laya-check
   python3 scripts/kaggle.py wait   emojet-laya-check          # polls until done, then fetches output
-  python3 scripts/kaggle.py output emojet-laya-check [dest]   # log + output files -> data/kaggle/<slug>/
+  python3 scripts/kaggle.py output emojet-laya-check [dest] [--only=reference --only=.json]   # log + output files -> data/kaggle/<slug>/
 
 Notebooks are pushed as private scripts unless --public is given. The token is never printed.
 """
@@ -69,7 +69,8 @@ def status(slug):
     return res.get("status", "?"), res.get("failureMessage")
 
 
-def output(slug, dest=None):
+def output(slug, dest=None, only=None):
+    """Fetch the log and output files; `only` = substrings, a file is fetched if its name contains one."""
     dest = pathlib.Path(dest or ROOT / "data" / "kaggle" / slug)
     dest.mkdir(parents=True, exist_ok=True)
     res = call("ListKernelSessionOutput", {"userName": USER, "kernelSlug": slug})
@@ -77,7 +78,10 @@ def output(slug, dest=None):
     for f in res.get("files") or []:
         name = f.get("fileName") or f.get("name")
         url = f.get("url")
+        if only and not any(o in name for o in only):
+            continue
         if name and url:
+            (dest / name).parent.mkdir(parents=True, exist_ok=True)
             req = urllib.request.Request(url, headers={"Authorization": f"Bearer {TOKEN}", "User-Agent": "emojet"})
             with urllib.request.urlopen(req, timeout=600) as r:
                 (dest / name).write_bytes(r.read())
@@ -97,7 +101,8 @@ def main():
     elif cmd == "status":
         print(*status(pos[0]))
     elif cmd == "output":
-        output(pos[0], pos[1] if len(pos) > 1 else None)
+        only = [a.split("=", 1)[1] for a in args if a.startswith("--only=")]
+        output(pos[0], pos[1] if len(pos) > 1 else None, only or None)
     elif cmd == "wait":
         t0 = time.time()
         while True:
