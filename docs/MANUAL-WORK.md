@@ -4,8 +4,8 @@ Claude does all the coding, building, local installs in your home folder, testin
 
 ## A. Right now (unblocks Phase 1)
 
-- [ ] **1. Tell Claude your phone**: model, Android version, RAM (Settings → About phone). Latency depends a lot on the chip.
-- [ ] **2. Install the Android basics** (official Arch repos; Claude can't type your sudo password):
+- [x] **1. Tell Claude your phone** — Redmi Note 17 Pro (Claude reads chip/RAM/Android version over adb once it's connected). The APK itself targets *any* Android 8+ phone.
+- [x] **2. Install the Android basics** (done 2026-10-04):
   ```
   ! sudo pacman -S --needed jdk21-openjdk android-tools android-udev
   ```
@@ -14,13 +14,27 @@ Claude does all the coding, building, local installs in your home folder, testin
   - `android-udev` — lets your normal user talk to the phone over USB (no root).
 
   After this, Claude installs the Android SDK + NDK into `~/Android/Sdk` itself (Google's official SDK download into your home folder, ~4 GB, no sudo, nothing system-wide).
-- [ ] **3. Phone → developer mode**: Settings → About phone → tap **Build number** 7 times → back → Developer options → turn on **USB debugging**. Plug the phone in, unlock it, accept **"Allow USB debugging?"** (tick "Always allow"). Claude checks with `adb devices`.
+- [ ] **3. Phone → developer mode (Redmi / Xiaomi HyperOS)**:
+  1. Settings → About phone → tap **OS version** 7 times (on Xiaomi it's "OS version", not "Build number").
+  2. Settings → Additional settings → **Developer options**:
+     - turn on **USB debugging**;
+     - turn on **Install via USB** (Xiaomi-only; it asks you to be signed in to a Mi account and may need a SIM card inserted — without it `adb install` fails with `INSTALL_FAILED_USER_RESTRICTED`);
+     - optional: **USB debugging (Security settings)** — only needed if Claude later automates taps for tests.
+  3. Plug the phone in with a data-capable USB cable, unlock it, choose **File transfer** if asked, accept **"Allow USB debugging?"** (tick "Always allow from this computer").
+  4. Tell Claude; Claude checks with `adb devices`.
+
+  Other Android brands: Settings → About phone → tap **Build number** 7 times, then the same USB debugging switch.
+
+### Xiaomi extras for the overlay (Phase 2, listed now so they're not a surprise)
+
+On HyperOS, an overlay app needs more than stock Android: Settings → Apps → EmoJet → **Other permissions** → allow **Display pop-up windows while running in the background** and **Display pop-up window**; **Autostart** on; Battery → **No restrictions**. EmoJet's setup screen will link to each of these.
 
 ## B. Decisions only you can make (any time)
 
-- [ ] **Instant keyword layer — yes or no?** A plain word table (`haha` → 😂 row) that shows a first row at 0 ms while Laya thinks. It's not an AI model, so "Laya only" still holds for the AI part. Recommended: yes.
+- [x] **Instant keyword layer** — decided 2026-10-04: **no**. Suggestions always come from the whole sentence, never from single words.
 - [ ] **Review `shared/moods.json`**: are the 25 moods the right ones? Are the emoji rows the ones *you* use? (e.g. 💀 for laughing). Edit freely — the test score will tell us if a change hurt.
 - [ ] **Write ~50 messages the way you text** (English + Hinglish, short and long, with the emoji you'd add). Only your own words — no screenshots of other people's chats. This becomes the real test set; 23 samples is too few to tune on.
+- [ ] **Where Laya-Emoji gets trained** (Phase T): (A) this laptop's RTX 2050 — needs `sudo pacman -S python-pytorch-cuda python-transformers python-safetensors python-datasets` (~5 GB) and runs the GPU hot for 1–3 h per run; or (B) free Kaggle GPU — needs a free Kaggle account (phone-verified), you press Run on a notebook Claude writes. Recommended: B, with a small local pilot first. Details: [TRAINING.md](TRAINING.md).
 - [ ] **Model size** after Phase 1: Claude will give you size / speed / accuracy for the 8-bit and 4-bit files; you pick.
 - [ ] **Icon / colours** for the app and extension (or say "you choose").
 

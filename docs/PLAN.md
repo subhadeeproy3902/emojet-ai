@@ -2,7 +2,16 @@
 
 **Goal:** free, fully on-device emoji suggestions while you type — an overlay on Android (WhatsApp, Instagram, SMS, any app) and a browser extension (WhatsApp Web, Instagram, Snapchat, any site). The only AI is **Laya**. Distributed as an APK and an unpacked extension zip on GitHub Releases. **$0** to build, host and run.
 
-Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [MANUAL-WORK](MANUAL-WORK.md) (your checklist) · [TESTING](TESTING.md) · [HUGGINGFACE](HUGGINGFACE.md) · [RESEARCH](RESEARCH.md)
+Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [TRAINING](TRAINING.md) · [MANUAL-WORK](MANUAL-WORK.md) (your checklist) · [TESTING](TESTING.md) · [HUGGINGFACE](HUGGINGFACE.md) · [RESEARCH](RESEARCH.md)
+
+## Design rules (owner's requirements)
+
+1. **Whole sentence, not single words.** The model always reads the full draft (+ the message being replied to). No suggestion is decided by one keyword.
+2. **All emojis.** Target: every emoji in Unicode 18.0 — 3,963 = 1,923 distinct emojis + skin-tone variants (applied from the user's preference). Phase 0's 25 moods are the stepping stone; Laya-Emoji (Phase T) is the goal.
+3. **Real time.** Suggestions within a typing pause; never blocks typing.
+4. **Laya only, $0.** No other AI model at runtime, no paid service, no store.
+5. **Any Android phone.** APK for `arm64-v8a` (all modern phones) + `x86_64` (emulators, Chromebooks), Android 8.0+ (`minSdk 26`). Owner's test phone: Redmi Note 17 Pro.
+6. **Multi-emoji friendly, reply-aware, privacy-first** (see ARCHITECTURE).
 
 Legend: **[Claude]** done by Claude · **[You]** needs your phone / password / accounts / taste · ✅ done · 🔄 in progress · ⬜ not started
 
@@ -15,9 +24,12 @@ Legend: **[Claude]** done by Claude · **[You]** needs your phone / password / a
 | llama.cpp (built from source in `~/build/llama.cpp`) | runs Laya; Laya support is newer than the Arch package | ✅ [Claude] |
 | Laya GGUF (`models/`, gitignored) | the model | ✅ [Claude] — `bash scripts/get-model.sh` |
 | Python 3, Node 22, pnpm, cmake, ninja, gcc | scripts, extension build, native builds | ✅ already installed |
-| JDK 21, adb, udev rules | Android build + install to phone | ⬜ **[You]** one `sudo pacman` line, see MANUAL-WORK §A |
-| Android SDK + NDK in `~/Android/Sdk` | cross-compile llama.cpp for phones, build the APK | ⬜ [Claude], after the JDK |
-| A phone with USB debugging | the only real latency test | ⬜ **[You]** |
+| JDK 21, adb, udev rules | Android build + install to phone | ✅ **[You]** installed 2026-10-04 |
+| Android SDK 36 + build-tools 36 + NDK r30 in `~/Android/Sdk` | cross-compile llama.cpp for phones, build the APK | ✅ [Claude] |
+| Full emoji catalog (`shared/emoji-catalog.json`) | all 1,923 base emojis + names + CLDR keywords | ✅ [Claude] — `python3 scripts/build-emoji-catalog.py` |
+| Brand assets (`assets/brand/`) | logo, favicons, extension icon sizes | ✅ from the owner's files |
+| A phone with USB debugging | the only real latency test | ⬜ **[You]** Redmi: see MANUAL-WORK §A (Xiaomi has extra switches) |
+| PyTorch + transformers, or a Kaggle account | training Laya-Emoji | ⬜ **[You]** decide A or B in TRAINING.md |
 | emscripten | WebAssembly engine for the extension | ⬜ **[You]** sudo, Phase 3 |
 | Hugging Face account | **not needed** (models are public) | — see HUGGINGFACE.md |
 
@@ -31,7 +43,8 @@ Legend: **[Claude]** done by Claude · **[You]** needs your phone / password / a
 - ✅ [Claude] Result on 23 labelled samples (Q4_0, 4 threads): **18/23 correct first mood, 22/23 in the top 3, ~183 ms per suggestion, ~265 MB RAM** on this laptop's CPU.
 - ✅ [Claude] Reply awareness measured: 3/3 reply samples right with the replied-to message, 0/3 without.
 - ⬜ **[You]** ~50 messages in your own texting style (MANUAL-WORK §B) → [Claude] turns them into the test set and tunes `moods.json` against it (target ≥ 85% top-3).
-- ⬜ **[You]** Decide on the instant keyword layer.
+- ✅ Instant keyword layer: dropped (owner: whole sentence only).
+- ✅ [Claude] Full Unicode 18.0 catalog: 3,963 emojis → 1,923 distinct + skin tones (`shared/emoji-catalog.json`).
 
 **Exit:** test-set score ≥ target, mood list approved by you.
 
@@ -45,6 +58,16 @@ The biggest unknown. Laptop: ~390 ms. A phone CPU is typically 2–4× slower, s
 4. **[You]** Install via adb (Claude runs it while the phone is plugged in), press the benchmark button, send Claude the screenshot / numbers.
 5. [Claude] Experiments on your phone: 8-bit vs 4-bit, 2/4/6 threads, OpenCL (Adreno) / Vulkan GPU backends if your chip has them, fewer moods (e.g. 16) to shorten the prompt.
 6. **Go / no-go** with you: pick model file + settings. Target: suggestion within ~600 ms of a typing pause on your phone.
+
+## Phase T — Train Laya-Emoji (all 1,923 emojis, whole sentence) — ⬜
+
+Runs in parallel with Phase 1 (same encoder, so phone speed results carry over). Full plan: [TRAINING.md](TRAINING.md).
+
+1. [Claude] Prove Laya's encoder loads in PyTorch and matches llama.cpp.
+2. [Claude] Build the dataset (emojinize 108K sentences + GoEmotions 58K + Laya-teacher + CLDR coverage); your messages = test set.
+3. [Claude] Laptop pilot: frozen encoder + emoji head.
+4. **[You]** Choose where the full training runs (laptop GPU vs free Kaggle GPU); [Claude] runs or prepares it.
+5. [Claude] Convert to GGUF Q4_0, verify, A/B against the mood model. Laya-Emoji replaces moods only if it wins on your test set.
 
 ## Phase 2 — Android overlay app — ⬜
 

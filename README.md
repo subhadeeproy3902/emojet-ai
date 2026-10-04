@@ -1,4 +1,6 @@
-# EmoJet
+<p align="center"><img src="assets/brand/emojet-logo-256.png" width="160" alt="EmoJet logo"></p>
+
+<h1 align="center">EmoJet</h1>
 
 Free, offline, real-time emoji suggestions while you type — as an overlay on Android (WhatsApp, Instagram, SMS, any app) and as a browser extension (WhatsApp Web, Instagram, Snapchat, Gmail, any site).
 
@@ -18,7 +20,7 @@ Laya reads your draft (and the message you're replying to) and picks its **mood*
 | Memory | ~265 MB |
 | Reply-aware | 3/3 reply cases right with context, 0/3 without |
 
-Next: Phase 1 — measure speed on a real phone. Full roadmap: [docs/PLAN.md](docs/PLAN.md). What the owner has to do by hand: [docs/MANUAL-WORK.md](docs/MANUAL-WORK.md).
+Next: Phase 1 — measure speed on a real phone — and Phase T — train **Laya-Emoji**, a fine-tuned Laya that reads the whole message and scores all 1,923 distinct emojis of Unicode 18.0 (3,963 with skin tones) in one pass ([docs/TRAINING.md](docs/TRAINING.md)). Full roadmap: [docs/PLAN.md](docs/PLAN.md). What the owner has to do by hand: [docs/MANUAL-WORK.md](docs/MANUAL-WORK.md).
 
 ## Try the engine on a laptop
 
@@ -42,6 +44,7 @@ No app stores, on purpose (zero cost, zero review):
 |---|---|
 | [PLAN](docs/PLAN.md) | phases, status, who does what |
 | [ARCHITECTURE](docs/ARCHITECTURE.md) | how the Android app and extension work |
+| [TRAINING](docs/TRAINING.md) | Laya-Emoji: covering all emojis from the whole sentence |
 | [MANUAL-WORK](docs/MANUAL-WORK.md) | the owner's checklist (sudo, phone, accounts, decisions) |
 | [TESTING](docs/TESTING.md) | automatic tests + hands-on test manual |
 | [HUGGINGFACE](docs/HUGGINGFACE.md) | what we need from Hugging Face (spoiler: no account) |
