@@ -1,0 +1,21 @@
+# model files — too large for git, downloaded by scripts instead
+*.gguf
+*.onnx
+*.safetensors
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.aab
+
+# Browser extension
+extension/node_modules/
+extension/dist/
+extension/*.zip
+
+# OS / editor
+.DS_Store
+*.swp
