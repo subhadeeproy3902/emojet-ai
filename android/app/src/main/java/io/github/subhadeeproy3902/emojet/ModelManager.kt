@@ -55,13 +55,18 @@ class ModelManager(context: Context) {
     /** A better model (earlier in the list) than the installed one, e.g. after "Check for updates". */
     fun upgradeAvailable(): Model? {
         val current = installed() ?: return null
-        return models.first().takeIf { it.id != current.id }
+        return models.firstOrNull { it.urls.isNotEmpty() }?.takeIf { models.indexOf(it) < models.indexOf(current) }
     }
 
     fun startDownload(allowMobileData: Boolean) {
         prefs.edit().putBoolean("mobile", allowMobileData).remove("error").apply()
-        enqueue(0, 0)
+        val first = models.indexOfFirst { it.urls.isNotEmpty() }
+        if (first < 0) prefs.edit().putString("error", "No download source configured. Import the model file instead.").apply()
+        else enqueue(first, 0)
     }
+
+    /** Next model that can be downloaded after index [from], or -1. Unpublished models have no URLs. */
+    private fun nextDownloadable(from: Int) = (from + 1 until models.size).firstOrNull { models[it].urls.isNotEmpty() } ?: -1
 
     private fun enqueue(model: Int, url: Int) {
         val m = models[model]
@@ -104,7 +109,7 @@ class ModelManager(context: Context) {
                     // Try the next URL, then the next model (e.g. our file not published yet -> official file).
                     when {
                         urlIdx + 1 < m.urls.size -> enqueue(modelIdx, urlIdx + 1)
-                        modelIdx + 1 < models.size -> enqueue(modelIdx + 1, 0)
+                        nextDownloadable(modelIdx) >= 0 -> enqueue(nextDownloadable(modelIdx), 0)
                         else -> prefs.edit().remove("id").putString("error", "Download failed (code $reason). Check the connection and try again.").apply()
                     }
                     poll()
