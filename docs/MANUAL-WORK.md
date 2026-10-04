@@ -4,7 +4,10 @@ Claude does all the coding, building, local installs in your home folder, testin
 
 ## ★ Before the next build session — do these, in this order
 
-1. **Phone ready** (§A step 3): OS version ×7 → Developer options → USB debugging **on** + Install via USB **on** (Mi account) → plug in → "Allow USB debugging?" → Always allow. Leave it plugged in when the session starts.
+1. **Phone ready** (§A step 3): OS version ×7 → Developer options → USB debugging **on** → plug in → "Allow USB debugging?" → Always allow. Leave it plugged in when the session starts.
+   - **Install via USB** is optional. It needs a Xiaomi account: check Settings (top of the list) — if already signed in, turn it on; if not, either create a free one (Settings → Xiaomi Account → Create account, phone number + SMS) or skip it.
+   - Without it, Claude copies the APK to the phone over the cable (`adb push`) and you tap it in Files → Downloads → Install. Same path real users take.
+   - ⚠️ Never sign out of / reset a phone signed in to a Xiaomi account whose password you don't know (Find Device lock).
 2. **Kaggle account** (training, $0):
    1. Sign up at kaggle.com (Google sign-in or email).
    2. Settings → **Phone verification** (Kaggle only gives free GPUs to verified accounts).
