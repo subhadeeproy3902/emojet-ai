@@ -12,6 +12,7 @@ Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [TRAINING](TRAINING.md) · [MAN
 4. **Laya only, $0.** No other AI model at runtime, no paid service, no store.
 5. **Any Android phone.** APK for `arm64-v8a` (all modern phones) + `x86_64` (emulators, Chromebooks), Android 8.0+ (`minSdk 26`). Owner's test phone: Redmi Note 17 Pro.
 6. **Multi-emoji friendly, reply-aware, privacy-first** (see ARCHITECTURE).
+7. **Tone-aware.** The model also reads *how* something is said: 4 communication styles, 46 tones, 4 tone dimensions (`shared/tones.json`), and emojis follow the tone (sarcastic "great job" → 🙃👏, not 🥳).
 
 Legend: **[Claude]** done by Claude · **[You]** needs your phone / password / accounts / taste · ✅ done · 🔄 in progress · ⬜ not started
 
@@ -64,7 +65,8 @@ The biggest unknown. Laptop: ~390 ms. A phone CPU is typically 2–4× slower, s
 Runs in parallel with Phase 1 (same encoder, so phone speed results carry over). Full plan: [TRAINING.md](TRAINING.md).
 
 1. [Claude] Prove Laya's encoder loads in PyTorch and matches llama.cpp.
-2. [Claude] Build the dataset (emojinize 108K sentences + GoEmotions 58K + Laya-teacher + CLDR coverage); your messages = test set.
+2. [Claude] Build the dataset (emojinize 108K sentences + GoEmotions 58K + Laya-teacher + CLDR coverage; tone: GoEmotions map, SARC sarcasm, Stanford politeness, Pavlick formality, Jigsaw toxicity, hand-written styles); your messages = test set.
+   - ✅ Tone taxonomy researched (`shared/tones.json`) and untrained-Laya tone baseline measured: tone 18/25 top-3, style 6/13 (`scripts/test-tones.py`).
 3. [Claude] Laptop pilot: frozen encoder + emoji head.
 4. **[You]** Choose where the full training runs (laptop GPU vs free Kaggle GPU); [Claude] runs or prepares it.
 5. [Claude] Convert to GGUF Q4_0, verify, A/B against the mood model. Laya-Emoji replaces moods only if it wins on your test set.
@@ -100,7 +102,13 @@ Confirmed by you:
 - **Reply-aware suggestions** (Phases 2/3).
 - **Multi-emoji friendly**: suppression only de-duplicates unchanged text; chains of emojis keep getting suggestions.
 
+Confirmed by you (2026-10-04):
+- **Tone of voice** in the model (Phase T outputs).
+
 Proposed (pick what you like):
+- **Tone chip** — a tiny label on the strip ("playful", "sounds passive-aggressive"), like Grammarly.
+- **Tone check before sending** — off by default; warns gently if the draft reads aggressive / condescending / passive-aggressive.
+- **Their tone** — tone of the message you're replying to ("they sound upset" → 🫂 rises).
 - **Personal boost** — emojis you pick often rise in their mood row (stored locally: emoji + mood only, never text).
 - **Combo chip** — one tap inserts a 2–3 emoji combo (😂💀, 🥳🎉🎂) — made for heavy emoji users.
 - **Skin tone preference** applied to hand/people emojis.

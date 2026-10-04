@@ -20,7 +20,7 @@ Laya reads your draft (and the message you're replying to) and picks its **mood*
 | Memory | ~265 MB |
 | Reply-aware | 3/3 reply cases right with context, 0/3 without |
 
-Next: Phase 1 — measure speed on a real phone — and Phase T — train **Laya-Emoji**, a fine-tuned Laya that reads the whole message and scores all 1,923 distinct emojis of Unicode 18.0 (3,963 with skin tones) in one pass ([docs/TRAINING.md](docs/TRAINING.md)). Full roadmap: [docs/PLAN.md](docs/PLAN.md). What the owner has to do by hand: [docs/MANUAL-WORK.md](docs/MANUAL-WORK.md).
+Next: Phase 1 — measure speed on a real phone — and Phase T — train **Laya-Emoji**, a fine-tuned Laya that reads the whole message and scores all 1,923 distinct emojis of Unicode 18.0 (3,963 with skin tones) in one pass, plus the **tone of voice** (4 communication styles, 46 tones — sarcastic, passive-aggressive, empathetic, …) so emojis match how you're saying it ([docs/TRAINING.md](docs/TRAINING.md)). Full roadmap: [docs/PLAN.md](docs/PLAN.md). What the owner has to do by hand: [docs/MANUAL-WORK.md](docs/MANUAL-WORK.md).
 
 ## Try the engine on a laptop
 

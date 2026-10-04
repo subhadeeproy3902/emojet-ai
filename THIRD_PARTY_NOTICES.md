@@ -20,6 +20,13 @@ EmoJet itself is MIT-licensed (see `LICENSE`). It uses or redistributes:
 ## Training data (Phase T, when used)
 - emojinize-multilingual — https://huggingface.co/datasets/yagizgencer/emojinize-multilingual — CC-BY-4.0
 - GoEmotions — https://huggingface.co/datasets/google-research-datasets/go_emotions — Apache-2.0
+- SARC sarcasm — https://huggingface.co/datasets/CreativeLang/SARC_Sarcasm — CC-BY-2.0
+- Stanford Politeness — https://huggingface.co/datasets/Cleanlab/stanford-politeness — MIT (original corpus CC-BY-4.0)
+- Pavlick formality scores — https://huggingface.co/datasets/osyvokon/pavlick-formality-scores — CC-BY-3.0
+- Jigsaw toxicity — https://huggingface.co/datasets/tasksource/jigsaw_toxicity — Apache-2.0
+
+## Tone taxonomy (`shared/tones.json`)
+Our own list, compiled from public descriptions of tone (owner's brief; Nielsen Norman Group "Tone-of-Voice Words"; PapersOwl "Types of Tone"; Grammarly's tone detector). Only tone names and short definitions are used — no text copied.
 
 ## Not used
 - emoji-jev (https://github.com/colinmcdermott/emoji-jev) inspired the idea. It has no licence, so none of its code or emoji data is copied.

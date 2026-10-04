@@ -23,6 +23,8 @@ Pass criteria (current baseline in brackets, 2026-10-04):
 | Reply samples with context | 3/3 top-1 | 3/3 |
 | Real memory (RssAnon) of `llama-server` | ≤ 300 MB | 266 MB |
 
+Tone/style check — `python3 scripts/test-tones.py` (same server). Baseline, untrained Laya: tone 14/25 first pick, 18/25 top 3; style 6/13. Laya-Emoji must beat it, especially on sarcastic / passive-aggressive / condescending / accusatory.
+
 When your ~50 messages arrive they replace the 23 samples as the main score (the 23 stay as a regression set).
 
 ### 1.2 Checksums — every model download / new quant

@@ -1,6 +1,6 @@
 # Phase T — Train "Laya-Emoji"
 
-**Goal:** one model that reads the **whole message** (and the message you're replying to) and scores **every emoji at once** — all 1,923 distinct emojis of Unicode 18.0 (3,963 including skin-tone variants) — in a single fast pass. Still Laya: it starts from Laya's own encoder weights (Apache-2.0) and is fine-tuned for emojis.
+**Goal:** one model that reads the **whole message** (and the message you're replying to) and, in a single fast pass, scores **every emoji** — all 1,923 distinct emojis of Unicode 18.0 (3,963 including skin-tone variants) — **and the tone of voice** (46 tones, 4 communication styles, 4 tone dimensions). Still Laya: it starts from Laya's own encoder weights (Apache-2.0) and is fine-tuned for emojis.
 
 ## Why the current setup can't do this
 
@@ -27,17 +27,64 @@ top 6 → apply skin-tone preference → personal boost → overlay
 - **Faster than today**: the prompt is only the message (~20–40 tokens) instead of question + 25 options (~80 tokens). Expected ~2× faster per suggestion, while covering 77× more emojis.
 - **Format**: Hugging Face `ModernBertForSequenceClassification` with 1,923 labels → `convert_hf_to_gguf.py` (llama.cpp supports this class, labels are stored in the file) → `llama-quantize` Q4_0. Head adds ~2M parameters (~1–4 MB).
 
+## Tone of voice (owner's addition, 2026-10-04)
+
+The same pass also reads **how** the message is said. Taxonomy: [`shared/tones.json`](../shared/tones.json) (sources in RESEARCH.md §5):
+
+- **4 communication styles** (pick one): assertive · passive · aggressive · passive-aggressive.
+- **46 tones** (any number can apply), in 5 families — intellectual & analytical (sarcastic, neutral, cynical, witty, analytical, curious, skeptical, thoughtful, pessimistic, serious), positive & engaging (empathetic, enthusiastic, encouraging, playful, humorous, joyful, loving, appreciative, admiring, optimistic, friendly, confident, flirty, nostalgic), defensive & hostile (condescending, defensive, apathetic, accusatory, aggressive, angry, disapproving, bitter, demanding, rude), formal & submissive (authoritative, formal, respectful, apologetic, tentative, urgent), vulnerable & emotional (sad, anxious, surprised, disappointed, confused, embarrassed). Each has aliases (e.g. condescending = patronizing, arrogant, smug).
+- **4 tone dimensions** (0–1 sliders, Nielsen Norman Group): funny↔serious · formal↔casual · respectful↔irreverent · enthusiastic↔matter-of-fact.
+
+### How it fits in the model — zero extra cost
+
+All outputs share the same encoder pass; they are just more numbers at the end:
+
+```
+[CLS] vector ──► one output layer, 1,977 numbers
+                 ├─ 1,923  emoji scores      (sigmoid each)
+                 ├─    46  tone scores       (sigmoid each)
+                 ├─     4  style scores      (softmax)
+                 └─     4  dimension scores  (sigmoid)
+```
+
+One output layer keeps it compatible with llama.cpp's classifier format (it stores one projection + labels); the app splits the numbers into the four groups. Training uses one loss per group, added together (multi-task), so learning tone also sharpens the emoji choice (a sarcastic "great job" should get 🙃👏, not 🥳).
+
+### What the tone outputs are used for
+
+1. **Tone-matched emojis** — final emoji score = emoji head + a small boost for the emoji rows of the detected tones (`tones.json` → `emojis`).
+2. **Tone chip** (proposed) — a tiny label on the strip: "playful", "sounds passive-aggressive", like Grammarly's tone detector.
+3. **Tone check before sending** (proposed, off by default) — if the draft scores high on aggressive / condescending / passive-aggressive / accusatory, show a gentle "😬 may sound passive-aggressive".
+4. **Their tone too** — the same model on the replied-to message ("they sound upset" → 🫂 rises).
+
+### Baseline: untrained Laya (2026-10-04, `scripts/test-tones.py`, 25 labelled messages)
+
+| | Result |
+|---|---|
+| Tone, first pick / top 3 | 14/25 · 18/25 |
+| Communication style | 6/13 (mostly answers "passive") |
+| Speed | ~1.15 s for both questions (46 tone options ≈ 170 tokens per question) |
+
+Right on explicit tones (apologetic, empathetic, anxious, surprised, encouraging, playful, appreciative, flirty→admiring). Wrong on implicit ones: sarcasm ("my favourite thing ever" → joyful), passive-aggressive ("since you always know best" → neutral), condescending, cynical, accusatory, defensive. → Untrained Laya is a usable *teacher* only for explicit tones; the subtle ones need the real datasets below.
+
 ## Training data (all free, licences allow training)
 
 | Source | What it teaches | Size | Licence |
 |---|---|---|---|
 | [`yagizgencer/emojinize-multilingual`](https://huggingface.co/datasets/yagizgencer/emojinize-multilingual) | **things/concepts** in full sentences → emojis (🇮🇹 🚀 ⚡ 🍕 …), 14 languages incl. Hindi | 108K sentences, ~430K emoji spans | CC-BY-4.0 (credit required) |
 | [`google-research-datasets/go_emotions`](https://huggingface.co/datasets/google-research-datasets/go_emotions) | **feelings** in real chat-style comments (27 emotions) → mapped to emoji sets | 58K labelled comments | Apache-2.0 |
-| Laya mood model (Phase 0) as teacher | chat tone on extra unlabelled sentences → soft labels | as many as we generate | own |
+| GoEmotions (same) → tone map | 27 emotions map onto ~20 tones (admiration→admiring, amusement→humorous, annoyance→angry, caring→empathetic, gratitude→appreciative, remorse→apologetic, nervousness→anxious, disapproval→disapproving, …) | 58K | Apache-2.0 |
+| [`CreativeLang/SARC_Sarcasm`](https://huggingface.co/datasets/CreativeLang/SARC_Sarcasm) | **sarcastic** (self-labelled Reddit "/s") | 1M+ (sample) | CC-BY-2.0 |
+| [`Cleanlab/stanford-politeness`](https://huggingface.co/datasets/Cleanlab/stanford-politeness) | respectful ↔ rude, demanding | ~11K | MIT (orig. CC-BY-4.0) |
+| [`osyvokon/pavlick-formality-scores`](https://huggingface.co/datasets/osyvokon/pavlick-formality-scores) | formal ↔ casual dimension | ~11K | CC-BY-3.0 |
+| [`tasksource/jigsaw_toxicity`](https://huggingface.co/datasets/tasksource/jigsaw_toxicity) | aggressive, rude, accusatory (insult/threat labels) | 100K+ | Apache-2.0 |
+| Laya (untrained) as teacher | explicit tones + moods on extra chat sentences → soft labels | as many as we generate | own |
+| Hand-written examples | the 4 communication styles, condescending, defensive, cynical, passive-aggressive (no good free dataset exists) | a few hundred | yours / ours — see MANUAL-WORK §B |
 | Unicode CLDR names + keywords | a few template sentences for every emoji, so none of the 1,923 is never seen | ~6K | Unicode-3.0 |
 | **Your ~50 messages** | real target style (English + Hinglish) | 50+ | yours — used as the **test set**, not for training |
 
 Labels per sentence = the set of emojis attached to it. Emojis already inside the input text are removed (the model must predict them, not copy them). Rare emojis get weighted up so 😂 doesn't win every time.
+
+Licence filter: datasets marked non-commercial or no-derivatives (e.g. EmpatheticDialogues CC-BY-NC, ToneStyle TST2K CC-BY-NC-ND) are **not used**, so the model and app can stay MIT/Apache and free for anyone. Datasets with no stated licence are skipped too.
 
 Notes: emojinize was annotated by GPT models (stated in its card) and is encyclopedic, not chatty — GoEmotions + Laya-teacher data balance the tone. Credits go in `THIRD_PARTY_NOTICES.md`.
 
@@ -67,4 +114,5 @@ Recommendation: **data prep + evaluation on the laptop (Claude), training on Kag
 
 - **hit@6**: at least one emoji you'd accept is among the 6 shown (main metric). Target ≥ 85% on your messages.
 - **mAP over emojis**, coverage (how many of the 1,923 emojis ever reach a top-6 on validation).
+- **Tone**: top-3 hit rate on `scripts/test-tones.py` + your messages (baseline untrained Laya: 18/25), per-tone F1 for the subtle ones (sarcastic, passive-aggressive, condescending, cynical, accusatory, defensive). **Style** accuracy (baseline 6/13).
 - Latency on laptop and phone; model size.

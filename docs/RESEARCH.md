@@ -76,3 +76,44 @@ Differences of ±1 sample are noise at n=23, but Q4_0 is clearly not worse and i
 ## 4. Phone expectations (to be measured in Phase 1)
 
 Laptop ≈ 190 ms at 4 threads for an ~80-token prompt. Phone big cores are roughly 2–4× slower for this kind of math → expect ~0.4–0.8 s on a recent mid/high-end phone, more on budget chips. Levers: fewer moods (shorter prompt), shorter state, GPU backends (OpenCL on Adreno, Vulkan), and the optional instant keyword layer to hide the wait.
+
+## 5. Tone of voice (2026-10-04)
+
+### 5.1 Is there one official list?
+
+No. Published lists range from 25 to 100+ tones and are mostly synonyms of each other. EmoJet's taxonomy ([`shared/tones.json`](../shared/tones.json)) merges and de-duplicates:
+
+| Source | What it contributed |
+|---|---|
+| Owner's brief | 4 communication styles (assertive, passive, aggressive, passive-aggressive) + 16 tones in 4 families |
+| [Nielsen Norman Group — Tone-of-Voice Words](https://www.nngroup.com/articles/tone-voice-words/) | 4 tone dimensions (funny↔serious, formal↔casual, respectful↔irreverent, enthusiastic↔matter-of-fact) + 37 tone words |
+| [PapersOwl — Types of Tone](https://papersowl.com/blog/types-of-tone) | ~85 tones grouped positive / neutral / negative |
+| [Grammarly tone detector](https://www.grammarly.com/tone) ([TechCrunch](https://techcrunch.com/2019/09/24/GRAMMARLY-GETS-A-TONE-DETECTOR-TO-KEEP-YOU-OUT-OF-EMAIL-TROUBLE/), [VentureBeat](https://venturebeat.com/ai/grammarly-uses-ai-to-detect-the-tone-and-tenor-of-your-writing)) | 40+ detected tones, each shown with an emoji — precedent for tone → emoji |
+| [The Write Practice — 42 tones](https://thewritepractice.com/tone-in-writing/), [selfpublishing.com — 25 tones](https://selfpublishing.com/writing-tones/) | cross-check |
+
+Result: **4 styles + 46 canonical tones** (each with aliases, e.g. condescending = patronizing / arrogant / superior / smug) in 5 families, + the 4 NN/G dimensions. Added beyond the owner's list because they matter for chat emojis: flirty, nostalgic, humorous, loving, sad, anxious, surprised, disappointed, confused, embarrassed, urgent, rude, bitter, demanding.
+
+### 5.2 Zero-shot test: untrained Laya (Q4_0, `scripts/test-tones.py`, 25 labelled messages)
+
+- Tone: **14/25** first pick, **18/25** top 3. Style: **6/13** (biased to "passive").
+- Correct: apologetic, empathetic, anxious, surprised, encouraging, playful, appreciative, confused/tentative, formal/neutral.
+- Wrong: sarcasm ("another meeting, my favourite thing ever" → joyful), passive-aggressive ("since you always know best" → neutral), condescending ("you wouldn't understand" → analytical), accusatory ("you always mess this up" → embarrassed), defensive, cynical, nostalgic.
+- ~170 prompt tokens per question (46 options) → ~1.15 s for style + tone. Too slow for runtime as separate questions; fine for offline teacher labelling.
+- Style descriptions didn't help (5/13).
+
+Conclusion: train tone as extra outputs of Laya-Emoji (same pass, no extra cost), with real data for the implicit tones (TRAINING.md).
+
+### 5.3 Free tone datasets found on Hugging Face (licence-checked)
+
+| Dataset | Tone signal | Licence | Use |
+|---|---|---|---|
+| google-research-datasets/go_emotions | 27 emotions (maps to ~20 tones) | Apache-2.0 | yes |
+| CreativeLang/SARC_Sarcasm | sarcasm (Reddit "/s") | CC-BY-2.0 | yes |
+| Cleanlab/stanford-politeness | politeness | MIT (orig. CC-BY-4.0) | yes |
+| osyvokon/pavlick-formality-scores | formality | CC-BY-3.0 | yes |
+| tasksource/jigsaw_toxicity | insult / threat / toxicity | Apache-2.0 | yes |
+| ToneStyle/TST2K | tone style | CC-BY-NC-ND-4.0 | **no** (non-commercial, no derivatives) |
+| EmpatheticDialogues | empathy | CC-BY-NC-4.0 | **no** |
+| raquiba/Sarcasm_News_Headline, marcbishara/sarcasm-on-reddit, ToneStyle/TST100K | various | no licence stated | **no** |
+
+No permissive dataset exists for passive-aggressive, condescending, defensive or the 4 communication styles → hand-written examples (owner + Claude) and careful teacher labels.

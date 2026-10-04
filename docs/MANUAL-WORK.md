@@ -34,6 +34,8 @@ On HyperOS, an overlay app needs more than stock Android: Settings → Apps → 
 - [x] **Instant keyword layer** — decided 2026-10-04: **no**. Suggestions always come from the whole sentence, never from single words.
 - [ ] **Review `shared/moods.json`**: are the 25 moods the right ones? Are the emoji rows the ones *you* use? (e.g. 💀 for laughing). Edit freely — the test score will tell us if a change hurt.
 - [ ] **Write ~50 messages the way you text** (English + Hinglish, short and long, with the emoji you'd add). Only your own words — no screenshots of other people's chats. This becomes the real test set; 23 samples is too few to tune on.
+- [ ] **Tone examples in your voice**: for each communication style (assertive, passive, aggressive, passive-aggressive) and the hard tones (sarcastic, condescending, defensive, cynical, accusatory), write 5–10 messages the way you or your friends would actually text them. No free dataset covers these well; your examples become test data and seeds. Template: [`shared/tones.json`](../shared/tones.json) has one example per style.
+- [ ] **Tone chip / tone check** (Phase 4 ideas): yes / no / later.
 - [ ] **Where Laya-Emoji gets trained** (Phase T): (A) this laptop's RTX 2050 — needs `sudo pacman -S python-pytorch-cuda python-transformers python-safetensors python-datasets` (~5 GB) and runs the GPU hot for 1–3 h per run; or (B) free Kaggle GPU — needs a free Kaggle account (phone-verified), you press Run on a notebook Claude writes. Recommended: B, with a small local pilot first. Details: [TRAINING.md](TRAINING.md).
 - [ ] **Model size** after Phase 1: Claude will give you size / speed / accuracy for the 8-bit and 4-bit files; you pick.
 - [ ] **Icon / colours** for the app and extension (or say "you choose").
