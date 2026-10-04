@@ -5,7 +5,9 @@ import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -35,6 +37,7 @@ class MainActivity : Activity() {
     private lateinit var mobileData: Switch
     private lateinit var status: TextView
     private lateinit var pauseButton: Button
+    private lateinit var keepRunningButton: Button
     private lateinit var disabledBox: LinearLayout
     private lateinit var updateStatus: TextView
     private lateinit var installButton: Button
@@ -86,6 +89,7 @@ class MainActivity : Activity() {
             if (System.currentTimeMillis() < Prefs.pausedUntil(this)) Prefs.resume(this) else Prefs.pauseFor(this, 3_600_000)
             refresh()
         }.also { col.addView(it) }
+        keepRunningButton = button("Keep EmoJet running (allow in the background)") { askKeepRunning() }.also { col.addView(it) }
         col.addView(button("1. Turn on EmoJet in Accessibility") {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }, margins(top = 12))
@@ -127,6 +131,10 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        // The "EmoJet is on" notification must be visible, or HyperOS freezes the service anyway.
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2)
+        }
         models.autoStartOnce()           // first launch: the model downloads by itself (Wi-Fi only)
         main.post(ticker)
     }
@@ -182,6 +190,12 @@ class MainActivity : Activity() {
             (if (Engine.get(this).isRunning) "\n✅ Engine running" else "\n• Engine starts when needed") +
             (if (paused) "\n⏸ Paused for ${(Prefs.pausedUntil(this) - System.currentTimeMillis()) / 60_000 + 1} min" else "")
         pauseButton.text = if (paused) "Resume now" else "Pause for 1 hour"
+        val exempt = getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
+        val notifOk = Build.VERSION.SDK_INT < 33 || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        status.append(if (exempt && notifOk) "\n✅ Allowed to run in the background"
+                      else "\n⚠️ The phone may freeze EmoJet in other apps — tap \"Keep EmoJet running\"")
+        if (isXiaomi()) status.append("\nXiaomi/Redmi/POCO: also App info → Battery → No restrictions, and Autostart on.")
+        keepRunningButton.visibility = if (exempt && notifOk) View.GONE else View.VISIBLE
 
         val off = Prefs.disabledApps(this).sorted()
         if (disabledBox.childCount != off.size + (if (off.isEmpty()) 0 else 1)) {
@@ -193,6 +207,21 @@ class MainActivity : Activity() {
             }
         }
         updates.pollApk()?.let { updateStatus.text = it }
+    }
+
+    private fun isXiaomi() = Build.MANUFACTURER.lowercase() in setOf("xiaomi", "redmi", "poco")
+
+    private fun askKeepRunning() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2)
+            return
+        }
+        if (!getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)) {
+            @Suppress("BatteryLife")
+            startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
+            return
+        }
+        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
     }
 
     private fun checkUpdates() {

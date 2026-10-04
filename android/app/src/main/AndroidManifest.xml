@@ -6,6 +6,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- In-app updates: hand the downloaded APK to Android's installer (user confirms with one tap). -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- While EmoJet is on, it runs as a foreground service so battery managers (HyperOS) don't freeze it. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Standard "let this app run in the background" dialog; HyperOS freezes non-exempt apps. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:allowBackup="false"
@@ -26,6 +32,7 @@
         <service
             android:name=".EmojetService"
             android:exported="true"
+            android:foregroundServiceType="specialUse"
             android:label="@string/service_name"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
@@ -34,6 +41,9 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps the on-device emoji model ready while the user types in other apps" />
         </service>
 
         <service
