@@ -2,6 +2,7 @@
 """Tiny Kaggle API client (stdlib only). Reads KAGGLE_API_TOKEN / KAGGLE_USERNAME from .env.
 
   python3 scripts/kaggle.py push training/kaggle/laya_check.py emojet-laya-check [--gpu] [--internet] [--public]
+  (a .ipynb file is pushed as a notebook, anything else as a script)
   python3 scripts/kaggle.py status emojet-laya-check
   python3 scripts/kaggle.py wait   emojet-laya-check          # polls until done, then fetches output
   python3 scripts/kaggle.py output emojet-laya-check [dest]   # log + output files -> data/kaggle/<slug>/
@@ -50,7 +51,7 @@ def push(path, slug, gpu, internet, public):
         "newTitle": slug,
         "text": (ROOT / path).read_text(encoding="utf-8"),
         "language": "python",
-        "kernelType": "script",
+        "kernelType": "notebook" if str(path).endswith(".ipynb") else "script",
         "isPrivate": not public,
         "enableGpu": gpu,
         "enableInternet": internet,
