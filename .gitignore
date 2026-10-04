@@ -19,3 +19,7 @@ extension/*.zip
 # OS / editor
 .DS_Store
 *.swp
+
+# local model files and Python caches
+models/
+__pycache__/

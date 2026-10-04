@@ -1,5 +1,5 @@
 # EmoJet — Browser extension
 
-Not started yet. See [`../docs/PLAN.md`](../docs/PLAN.md) Phase 3.
+Not started yet — Phase 3 (see [`../docs/PLAN.md`](../docs/PLAN.md)).
 
-Will contain: a Manifest V3 extension with a generic content script, a WASM build of `llama.cpp` (`wllama`) running the same Laya GGUF model, and a popup for on/off + per-site control.
+Plan ([`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)): Manifest V3; a content script that works on any text field (Shadow-DOM suggestion strip, `insertText`-based insertion for editors like WhatsApp Web's); the Laya engine ("emojet-core", the decision code from `llama-server` + libllama) compiled to WebAssembly and run in an offscreen document; model stored in OPFS after one download. Optional fast path: a local `llama-server` if the user runs one.

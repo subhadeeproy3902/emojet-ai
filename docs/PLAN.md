@@ -1,101 +1,104 @@
-# EmoJet — Phase plan
+# EmoJet — Plan
 
-Goal: a free, fully on-device emoji suggestion overlay (Android) + browser extension, built on Laya only, distributed as a raw APK + an unpacked extension folder — no app stores, no servers, no cost to build or to run, ever.
+**Goal:** free, fully on-device emoji suggestions while you type — an overlay on Android (WhatsApp, Instagram, SMS, any app) and a browser extension (WhatsApp Web, Instagram, Snapchat, any site). The only AI is **Laya**. Distributed as an APK and an unpacked extension zip on GitHub Releases. **$0** to build, host and run.
 
-Legend: **[Claude]** = can be done by the assistant directly. **[You]** = needs your hardware, your accounts, or a judgment call only you can make.
+Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [MANUAL-WORK](MANUAL-WORK.md) (your checklist) · [TESTING](TESTING.md) · [HUGGINGFACE](HUGGINGFACE.md) · [RESEARCH](RESEARCH.md)
 
----
-
-## Phase 0 — Validate the model itself
-
-Nothing else matters if Laya's suggestions aren't good or aren't fast enough. Do this before writing any app code.
-
-1. **[You]** Install `llama.cpp` locally (not on this EndeavourOS box necessarily — wherever is convenient for you to iterate; could be this machine too).
-2. **[Claude]** Write a small script (`scripts/dev-server.sh`) that starts `llama.cpp server` with the Laya `Q8_0` GGUF and exposes `/v1/systemone`.
-3. **[Claude]** Write a test harness (`scripts/test-prompts.*`) with ~20 real-world sample sentences (happy, sarcastic, angry, flirty, plain statements) and the typed-decision schema (emoji candidate set, emotion class, mood/urgency/energy scores) to send against that endpoint.
-4. **[You]** Run the server + harness, eyeball the suggestion quality against the 20 samples. Decide: good enough as-is, or does it need prompt/schema tweaks?
-5. **[Claude]** If size/speed is a concern later, write the `llama-quantize` command to produce a `Q4_K_M` (~225MB) variant from the same checkpoint, as a documented fallback — not run unless Phase 1 shows it's needed.
-
-**Exit criteria:** you're happy with suggestion quality on the local server, and we have a documented typed-decision schema (the exact "questions" sent to Laya) to reuse in both the Android and browser clients.
+Legend: **[Claude]** done by Claude · **[You]** needs your phone / password / accounts / taste · ✅ done · 🔄 in progress · ⬜ not started
 
 ---
 
-## Phase 1 — Android on-device latency prototype
+## Prerequisites
 
-The riskiest unknown: is a 421M-param single-forward-pass model actually fast enough on a phone CPU? Nobody's published that number for Laya. Find out before building any UI.
-
-### Prerequisites (install once)
-
-- **[You]** Android Studio + NDK (needed to compile `llama.cpp` for Android via JNI).
-- **[You]** Your physical Android phone, USB debugging enabled (`adb` needs to see it) — an emulator can't meaningfully test real-world CPU latency or later, the AccessibilityService/overlay behavior against the real WhatsApp app.
-
-### Steps
-
-1. **[Claude]** Scaffold a minimal Kotlin app with a JNI binding to `llama.cpp` (reusing the wiring pattern from llama.cpp's own `examples/llama.android`, not copying a product).
-2. **[Claude]** Wire it to load the Laya GGUF once at app start and keep it warm (reload cost would dominate perceived latency — load-once is non-negotiable).
-3. **[You]** Push the model file + app to your phone (`adb push` / debug install), run it against the same 20 test sentences from Phase 0.
-4. **[You]** Report back: real on-device ms per suggestion, RAM used, any visible battery/heat impact over a few minutes of sustained use.
-5. **[Claude + You]** Go/no-go: if latency feels bad, the lever is quant level (`Q4_K_M`) and trimming context (feed only the last sentence/clause, not full chat history) — not switching models. We stay Laya-only per your requirement.
-
-**Exit criteria:** a confirmed, real, on-device latency number from your own phone, and a decision on which quant level ships.
+| What | Why | Status |
+|---|---|---|
+| llama.cpp (built from source in `~/build/llama.cpp`) | runs Laya; Laya support is newer than the Arch package | ✅ [Claude] |
+| Laya GGUF (`models/`, gitignored) | the model | ✅ [Claude] — `bash scripts/get-model.sh` |
+| Python 3, Node 22, pnpm, cmake, ninja, gcc | scripts, extension build, native builds | ✅ already installed |
+| JDK 21, adb, udev rules | Android build + install to phone | ⬜ **[You]** one `sudo pacman` line, see MANUAL-WORK §A |
+| Android SDK + NDK in `~/Android/Sdk` | cross-compile llama.cpp for phones, build the APK | ⬜ [Claude], after the JDK |
+| A phone with USB debugging | the only real latency test | ⬜ **[You]** |
+| emscripten | WebAssembly engine for the extension | ⬜ **[You]** sudo, Phase 3 |
+| Hugging Face account | **not needed** (models are public) | — see HUGGINGFACE.md |
 
 ---
 
-## Phase 2 — Android overlay app (the real product)
+## Phase 0 — Prove Laya can do this (laptop) — ✅ mostly done
 
-1. **[Claude]** `AccessibilityService` that reads the focused text field system-wide (any app — WhatsApp, Instagram, SMS).
-2. **[Claude]** Explicitly skip password/sensitive input fields (`InputType` flags) — privacy non-negotiable, not just a nicety.
-3. **[Claude]** `TYPE_APPLICATION_OVERLAY` window: floating suggestion strip anchored near the input/keyboard.
-4. **[Claude]** Debounce logic: run inference on pause-in-typing, not every keystroke.
-5. **[Claude]** Suppression logic (see "Design notes" below) for the "just typed an emoji" case, tuned to not punish heavy multi-emoji typers.
-6. **[Claude]** Reply-aware context: if the message you're replying to is readable from the accessibility tree, feed it in alongside your own draft for sharper suggestions.
-7. **[Claude]** Settings screen: on/off toggle, battery-saver mode, model download/update manager, plain-language privacy explanation.
-8. **[You]** Grant the accessibility permission on your phone (one-time, interactive — can't be scripted) and live-test against real WhatsApp/Instagram/SMS conversations.
-9. **[Claude]** Build the signed release APK once you're happy with it.
+- ✅ [Claude] Build llama.cpp, download + checksum the model, `scripts/dev-server.sh`, `scripts/test-prompts.py`.
+- ✅ [Claude] Found that asking Laya to choose among emojis directly fails (192-token option budget → emojis truncated to byte fragments) and switched to the **mood-label design** (see ARCHITECTURE).
+- ✅ [Claude] Compared model files: **Q4_0 (252 MB, made locally) is the pick** — smallest, fastest, no accuracy loss vs the official 8-bit file.
+- ✅ [Claude] Result on 23 labelled samples (Q4_0, 4 threads): **18/23 correct first mood, 22/23 in the top 3, ~183 ms per suggestion, ~265 MB RAM** on this laptop's CPU.
+- ✅ [Claude] Reply awareness measured: 3/3 reply samples right with the replied-to message, 0/3 without.
+- ⬜ **[You]** ~50 messages in your own texting style (MANUAL-WORK §B) → [Claude] turns them into the test set and tunes `moods.json` against it (target ≥ 85% top-3).
+- ⬜ **[You]** Decide on the instant keyword layer.
+
+**Exit:** test-set score ≥ target, mood list approved by you.
+
+## Phase 1 — Is it fast enough on your phone? — ⬜
+
+The biggest unknown. Laptop: ~390 ms. A phone CPU is typically 2–4× slower, so expect ~0.8–1.5 s unless a GPU backend or fewer tokens help. Measure before building UI.
+
+1. [Claude] Install Android SDK + NDK (after your JDK install).
+2. [Claude] Cross-compile `llama-server` for `arm64-v8a` (CPU, with ARM dot-product / i8mm kernels).
+3. [Claude] "EmoJet Lab": a bare test app — text box, Run button, shows mood + emoji row + milliseconds, runs the full 23-sample benchmark with one tap. Model copied with `adb push` (no download code yet).
+4. **[You]** Install via adb (Claude runs it while the phone is plugged in), press the benchmark button, send Claude the screenshot / numbers.
+5. [Claude] Experiments on your phone: 8-bit vs 4-bit, 2/4/6 threads, OpenCL (Adreno) / Vulkan GPU backends if your chip has them, fewer moods (e.g. 16) to shorten the prompt.
+6. **Go / no-go** with you: pick model file + settings. Target: suggestion within ~600 ms of a typing pause on your phone.
+
+## Phase 2 — Android overlay app — ⬜
+
+1. [Claude] Engine service: starts `llama-server` from the APK's native-lib folder on a random localhost port + random API key, loads the model once, stops after idle.
+2. [Claude] Model manager: first-run download (pinned revision, sha256, resumable, Wi-Fi only), GitHub mirror fallback, "import .gguf" button.
+3. [Claude] AccessibilityService: focused field text + cursor, skip password fields, per-app allow/deny list.
+4. [Claude] Overlay strip near the field, tap to insert at cursor, follows keyboard.
+5. [Claude] Debounce + cache + dedup rule (never block multi-emoji typing).
+6. [Claude] Reply awareness: generic "last incoming bubble", WhatsApp quoted-reply adapter.
+7. [Claude] Toggle: quick-settings tile, notification action, in-app switch; "pause for 1 hour".
+8. [Claude] Settings: per-app list, battery saver, model status, privacy page ("0 network calls since setup").
+9. **[You]** Real-world day of use; report what feels wrong.
+10. [Claude] Fixes, then a signed release APK (you back up the key).
+
+## Phase 3 — Browser extension — ⬜
+
+1. [Claude] Extract the Laya decision code from `llama-server` into "emojet-core" (C++), with a tiny C API: `load(model)`, `decide(json) → json`. Unit-tested on the laptop against `llama-server`'s answers (must match).
+2. [Claude] Compile emojet-core to WebAssembly (emscripten, SIMD + threads). **Measure speed first** — WASM is usually 2–3× slower than native. Go/no-go:
+   - fast enough → it's the default engine;
+   - too slow → default to the optional local fast path below and keep WASM as the zero-setup fallback.
+3. [Claude] MV3 extension: content script (Shadow-DOM strip), `insertText`-based insertion (works with WhatsApp Web's / Instagram's editors), offscreen-document engine, OPFS model storage, popup (on/off, per-site, status).
+4. [Claude] Site adapters for reply context: WhatsApp Web, Instagram; generic for the rest.
+5. [Claude] Optional fast path: if a local `llama-server` is running (you already have one), use it. Off by default, never required.
+6. **[You]** Real-world use on the sites; Firefox signing account if you want Firefox permanently.
+7. [Claude] Release zip.
+
+## Phase 4 — Enhancements — ⬜
+
+Confirmed by you:
+- **Reply-aware suggestions** (Phases 2/3).
+- **Multi-emoji friendly**: suppression only de-duplicates unchanged text; chains of emojis keep getting suggestions.
+
+Proposed (pick what you like):
+- **Personal boost** — emojis you pick often rise in their mood row (stored locally: emoji + mood only, never text).
+- **Combo chip** — one tap inserts a 2–3 emoji combo (😂💀, 🥳🎉🎂) — made for heavy emoji users.
+- **Skin tone preference** applied to hand/people emojis.
+- **Swipe the strip** to see the next mood's row; long-press for the full row.
+- **Position / size / opacity** of the strip; haptic tick on insert; Material You colours.
+- **Emoji Wrapped** — a local-only stats card (your top emojis and moods this month), screenshot-ready.
+- **Kaomoji mode** ¯\\_(ツ)_/¯ for places where emojis look wrong (work chats, terminals).
+- **Hinglish / multilingual** — convert Laya's multilingual checkpoint to GGUF if Hinglish scores stay low.
+- **Sarcasm wink** — when idle, one extra Laya yes/no pass; if sarcastic, add 🙃.
+- **TalkBack labels** so the overlay is usable with a screen reader.
+
+## Phase 5 — Release — ⬜
+
+- [Claude] `docs/INSTALL.md` for users (APK steps incl. restricted settings, extension "load unpacked").
+- [Claude] GitHub Release: APK + extension zip + checksums + notices; model mirror asset.
+- **[You]** OK each public release; back up the signing key; check Google's developer-verification status (MANUAL-WORK §G).
 
 ---
 
-## Phase 3 — Browser extension
+## Working agreement
 
-1. **[Claude]** Manifest V3 scaffold, generic content script that attaches to any focused editable element on any page (not per-site rules) — covers WhatsApp Web, Instagram, Snapchat, Gmail, anywhere.
-2. **[Claude]** WASM build of `llama.cpp` (e.g. `wllama`) running the same Laya GGUF, inside a Web Worker so typing never stutters.
-3. **[Claude]** Model downloaded once from Hugging Face on first use, cached in IndexedDB — fully offline after that.
-4. **[Claude]** Popup toggle (on/off) + per-site quick-disable, using browser-local storage only (no accounts, no sync to any server).
-5. **[You]** Load it unpacked in your browser(s) and live-test on the actual sites, same as the dev loop in Phase 0.
-6. **[Claude]** Package a release zip (for "download and unpack" distribution, no store).
-
-### Optional power-user fast path (not required for anyone)
-
-Since you already have `llama.cpp server` running locally for Phase 0 dev-testing, that same local server can stay available as an opt-in "fast path" setting in the extension (native speed instead of WASM, no download needed if you already run it). Off by default — regular users never see or need it; this only exists because the dev tooling happens to double as a nice option for people like you who are comfortable running a local server.
-
----
-
-## Phase 4 — Polish / enhancements
-
-- Reply-aware suggestions (moved up into Phase 2/3 above — flagged here as a confirmed priority).
-- Smart multi-emoji suppression (see design notes).
-- Battery-saver throttling below 20% battery (Android).
-- Long-press to expand into a mood-categorized grid, using Laya's emotion/score outputs you're already computing (not just the top row).
-- Double-tap a suggestion to insert-and-send in one action.
-- Visible "0 network calls" indicator in settings — the honest answer to "is this really free and private."
-- Model-update channel pointed at the Hugging Face repo, independent of app/extension releases.
-
----
-
-## Design notes
-
-### Reply-aware suggestions
-When the accessibility tree / page DOM exposes the message you're replying to, include it as extra context alongside your own draft when building the typed-decision prompt. This should noticeably improve relevance for short replies ("same place?" → 📍 vs just guessing from 3 words alone). Falls back gracefully to draft-only when no reply context is available (e.g., starting a new message).
-
-### Suppressing re-suggestion without punishing heavy emoji users
-The naive rule ("don't suggest right after an emoji") breaks for people who chain many emojis on purpose. The actual rule should be:
-
-- Suppress re-running inference only when the **clause hasn't changed** since the last suggestion was shown (i.e. you tapped a suggestion or ignored it, and haven't typed any new word since) — this avoids wastefully re-suggesting on a sentence that's already been evaluated.
-- Do **not** suppress just because the last character is an emoji. If you keep typing more words/clauses after an emoji, suggestions should keep coming, as many times as you want.
-- This is a debounce-dedup rule (don't repeat work on unchanged input), not a "you've had enough emojis" rule.
-
-### Distribution (confirmed)
-No Play Store, no Chrome Web Store. Android ships as a signed APK for sideloading; the extension ships as a zip for "load unpacked" installs. This removes the $25 Play Store fee, the Chrome Web Store review, and any store policy risk entirely — fully consistent with the zero-cost goal.
-
-### Open source
-MIT license. Contributions welcome once Phase 1's prototype proves the latency story out.
+- Claude commits and pushes every meaningful change (owner's instruction), with a Co-Authored-By trailer.
+- Model files, keys, tokens and build outputs never go into git (`.gitignore`).
+- Every change to `moods.json` or prompt wording is re-scored with `scripts/test-prompts.py`; the score must not drop.

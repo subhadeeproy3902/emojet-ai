@@ -1,51 +1,76 @@
 # Test manual
 
-Split into what can be verified without a phone/browser in the loop (Claude can run these directly) and what genuinely needs you (hardware, permissions, or a human judgment call on "does this feel good").
+Two kinds of tests: **automatic** ones Claude runs on the laptop after every change, and **hands-on** ones that need your phone, your browser and your judgement. Each phase ends only when both pass.
 
-## What Claude can test directly
+## 1. Automatic tests (Claude)
 
-These don't need your phone or a live browser session — they can be run and checked from the dev machine:
+### 1.1 Model quality + speed — every change to `moods.json`, prompt wording or model file
 
-- [ ] `scripts/dev-server.sh` starts `llama.cpp server` cleanly and `/v1/systemone` responds.
-- [ ] `scripts/test-prompts.*` runs all sample sentences and returns well-formed JSON (right schema, no crashes, no timeouts) for every one.
-- [ ] Quantization command (`llama-quantize`) produces a valid `Q4_K_M` file from the source checkpoint, and that file loads without error.
-- [ ] Android project builds (`./gradlew assembleDebug`) without errors.
-- [ ] Extension builds/lints cleanly (`web-ext lint`, or the Vite/CRXJS build) with no manifest or script errors.
-- [ ] Unit tests for the debounce/suppression logic (the "clause changed vs unchanged" rule) — pure logic, testable without any device.
-- [ ] Unit tests for the reply-context prompt assembly (given a fake "replying to X" + "draft Y", confirm the right prompt is built).
+```bash
+bash scripts/dev-server.sh &              # Q4_0, 4 threads, 127.0.0.1:8080
+python3 scripts/test-prompts.py           # score + latency
+python3 scripts/test-prompts.py --no-reply   # proves reply context still helps
+pkill -x llama-server
+```
 
-Claude will run these as each phase's code lands and report pass/fail before asking you to do the hands-on part.
+Pass criteria (current baseline in brackets, 2026-10-04):
 
-## What needs you
+| Check | Must be | Baseline |
+|---|---|---|
+| Top-3 mood correct | ≥ baseline, target ≥ 85% | 22/23 (96%) |
+| Top-1 mood correct | ≥ baseline − 1 | 18/23 |
+| Median latency, laptop, 4 threads | ≤ 250 ms | 183 ms |
+| Reply samples with context | 3/3 top-1 | 3/3 |
+| Real memory (RssAnon) of `llama-server` | ≤ 300 MB | 266 MB |
 
-These require real hardware, interactive permission grants, or subjective judgment — Claude cannot do these remotely:
+When your ~50 messages arrive they replace the 23 samples as the main score (the 23 stay as a regression set).
 
-### Phase 0 — model quality
-- [ ] Run the local `llama.cpp server`, fire the test harness, read the 20 sample outputs yourself.
-- [ ] Judge: are the top-3 emoji suggestions actually what you'd pick, for at least 15/20 samples?
+### 1.2 Checksums — every model download / new quant
+- `sha256sum models/*.gguf` matches the table in `HUGGINGFACE.md` (official files) or the value recorded when we made the quant.
 
-### Phase 1 — Android latency
-- [ ] Install the debug APK on your phone via `adb`.
-- [ ] Run the same 20 test sentences through the on-device model (via the prototype's test screen).
-- [ ] Report: ms per suggestion, RAM used, any noticeable heat/battery drain over ~5 minutes of continuous testing.
-- [ ] Judge: does it feel instant after a typing pause, or does it feel laggy?
+### 1.3 Android (from Phase 1)
+- `./gradlew assembleDebug` succeeds; `./gradlew test` (unit tests) passes.
+- Unit tests: suggestion blend (same output as `suggest()` in the Python script for fixed inputs), debounce/dedup rule (unchanged clause → no new request; new word after an emoji → new request), reply-context prompt building, password-field skip.
+- `llama-server` arm64 binary: `file` says ARM aarch64; it starts under `qemu-aarch64` or on the phone and answers `/health`.
 
-### Phase 2 — Android overlay, real-world use
-- [ ] Grant the Accessibility permission (one-time, interactive).
-- [ ] Open real WhatsApp, Instagram, and SMS conversations; type normally for at least one full day of real use.
-- [ ] Confirm: suggestions never appear over a password field.
-- [ ] Confirm: suggestions keep appearing across multiple consecutive emoji-heavy messages (the "heavy emoji user" case) and don't get stuck suppressed.
-- [ ] Confirm: reply-aware suggestions feel noticeably better than draft-only, on at least a few real replies.
-- [ ] Confirm: toggling off in settings immediately stops the overlay, with no lingering permission weirdness.
+### 1.4 Extension (from Phase 3)
+- emojet-core (native build) gives the **same probabilities** as `llama-server` for the sample set (tolerance 1e-3).
+- WASM build gives the same answers as the native build.
+- `pnpm build` + `web-ext lint` pass; the zip contains the licences.
+- Insert test against a local HTML page with `textarea`, `input`, a plain `contenteditable` and a Lexical editor (WhatsApp Web uses Lexical).
 
-### Phase 3 — Browser extension, real-world use
-- [ ] Load unpacked in your main browser, test on WhatsApp Web, Instagram, Snapchat, and at least one other site (Gmail, Discord web, etc.) to confirm the "anywhere" claim holds.
-- [ ] Confirm the model downloads once, then works fully offline afterward (test with Wi-Fi off after first load).
-- [ ] Confirm per-site quick-disable works without disabling the whole extension.
+## 2. Hands-on tests (you)
 
-### Ongoing
-- [ ] Spot-check the "0 network calls" claim yourself occasionally (browser devtools Network tab / Android network monitor) — it's the core trust claim of the whole project, worth verifying it stays true as features get added.
+Tick each, and send Claude a one-line result per phase, e.g. *"Phase 1: 420 ms median, 4 threads, no heat, feels OK"*.
 
-## Reporting format
+### Phase 0 — quality (laptop)
+- [ ] Read the output of `python3 scripts/test-prompts.py`. For each line: would *you* use one of the 6 emojis shown? Note the ones where you wouldn't.
+- [ ] Write your ~50 messages (MANUAL-WORK §B).
 
-When you run a [You] item, a one-line result back to Claude is enough to keep the plan moving, e.g.: "Phase 1: ~180ms per suggestion, 310MB RAM, no noticeable heat — feels fine." That's enough to decide whether to move to Phase 2 as-is or adjust quant level first.
+### Phase 1 — speed on your phone
+- [ ] Phone plugged in with USB debugging on; Claude installs "EmoJet Lab".
+- [ ] Tap **Benchmark**; screenshot the result (median ms, model, threads).
+- [ ] Type a few of your own messages in the Lab text box; does the row feel right and quick?
+- [ ] After ~5 minutes of use: phone noticeably warm? battery drop?
+
+### Phase 2 — overlay in real apps
+- [ ] Install the APK, go through every permission screen (restricted settings, accessibility, display over apps, battery unrestricted). Note any screen that was confusing.
+- [ ] WhatsApp: type 10+ messages in 2 chats. Strip appears after a pause, near the field, never covering the Send button.
+- [ ] Tap inserts at the cursor (also in the middle of the text), not at the end.
+- [ ] Multi-emoji: type text, tap an emoji, tap another, keep typing → suggestions keep coming.
+- [ ] Reply: swipe-reply to a message, type "yes!!" → row fits the replied message.
+- [ ] Instagram DMs, SMS, one more app of your choice: same checks.
+- [ ] Password field (any login screen): **no strip, ever**.
+- [ ] Toggle off (tile / notification / app): strip disappears immediately; on again works.
+- [ ] Leave it a full day: anything annoying? battery use in Settings → Battery?
+- [ ] Airplane mode after model download: still works (proves no network needed).
+
+### Phase 3 — extension
+- [ ] Load unpacked (Chrome/Brave/Edge); model downloads once with progress.
+- [ ] WhatsApp Web, Instagram web DMs, Snapchat web, Gmail compose: strip appears, insert works, the site's own editor doesn't break (no lost text, Enter still sends).
+- [ ] Per-site disable works; global off works.
+- [ ] Wi-Fi off after the first download: still works.
+- [ ] DevTools → Network while typing: **no requests** from the extension.
+
+### Every release
+- [ ] Fresh install on a second phone / browser profile following `docs/INSTALL.md` exactly — any step that's unclear is a bug in the guide.
