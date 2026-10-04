@@ -4,6 +4,18 @@
 
 Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [TRAINING](TRAINING.md) · [MANUAL-WORK](MANUAL-WORK.md) (your checklist) · [TESTING](TESTING.md) · [HUGGINGFACE](HUGGINGFACE.md) · [RESEARCH](RESEARCH.md)
 
+## Decisions log
+
+| Date | Decision |
+|---|---|
+| 2026-10-04 | Laya only; $0; APK + unpacked extension via GitHub Releases, no stores |
+| 2026-10-04 | Mood labels instead of direct emoji choice (192-token budget); Q4_0 model file |
+| 2026-10-04 | No keyword layer — whole sentence only |
+| 2026-10-04 | Target all Unicode emojis + tone of voice via fine-tuned Laya-Emoji |
+| 2026-10-05 | **Training on Kaggle** (free GPU); laptop for data prep, conversion and tests |
+| 2026-10-05 | **Small APK (~15 MB) + model downloaded on first launch** (Option A) |
+| 2026-10-05 | **Updates from inside the app / extension** — app, model and data; never uninstall + reinstall ([WORKFLOWS.md](WORKFLOWS.md) §4) |
+
 ## Design rules (owner's requirements)
 
 1. **Whole sentence, not single words.** The model always reads the full draft (+ the message being replied to). No suggestion is decided by one keyword.
@@ -81,6 +93,7 @@ Runs in parallel with Phase 1 (same encoder, so phone speed results carry over).
 6. [Claude] Reply awareness: generic "last incoming bubble", WhatsApp quoted-reply adapter.
 7. [Claude] Toggle: quick-settings tile, notification action, in-app switch; "pause for 1 hour".
 8. [Claude] Settings: per-app list, battery saver, model status, privacy page ("0 network calls since setup").
+9. [Claude] **Updates screen**: reads `updates.json` from GitHub Releases on "Check for updates" (optional weekly Wi-Fi check, off by default); model/data updates in-app with sha256 + rollback; app updates via Android's installer (one "Update" tap, same signing key, no uninstall); re-enable shortcut if the phone turned accessibility off after an update.
 9. **[You]** Real-world day of use; report what feels wrong.
 10. [Claude] Fixes, then a signed release APK (you back up the key).
 
@@ -93,6 +106,7 @@ Runs in parallel with Phase 1 (same encoder, so phone speed results carry over).
 3. [Claude] MV3 extension: content script (Shadow-DOM strip), `insertText`-based insertion (works with WhatsApp Web's / Instagram's editors), offscreen-document engine, OPFS model storage, popup (on/off, per-site, status).
 4. [Claude] Site adapters for reply context: WhatsApp Web, Instagram; generic for the rest.
 5. [Claude] Optional fast path: if a local `llama-server` is running (you already have one), use it. Off by default, never required.
+5b. [Claude] **Updates page**: fixed extension ID (`key` in manifest) so settings + model survive updates; model/data updates in-extension; code updates one-click via a folder you allow once (verify it works), fallback "unzip over + Reload EmoJet"; Firefox build with automatic updates.
 6. **[You]** Real-world use on the sites; Firefox signing account if you want Firefox permanently.
 7. [Claude] Release zip.
 
@@ -123,7 +137,7 @@ Proposed (pick what you like):
 ## Phase 5 — Release — ⬜
 
 - [Claude] `docs/INSTALL.md` for users (APK steps incl. restricted settings, extension "load unpacked").
-- [Claude] GitHub Release: APK + extension zip + checksums + notices; model mirror asset.
+- [Claude] GitHub Release: APK + extension zip + model + checksums + notices + **`updates.json`** (latest version, URL and sha256 of app, extension, model, data) — what the in-app Updates screens read.
 - **[You]** OK each public release; back up the signing key; check Google's developer-verification status (MANUAL-WORK §G).
 
 ---

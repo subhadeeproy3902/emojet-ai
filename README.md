@@ -43,6 +43,7 @@ No app stores, on purpose (zero cost, zero review):
 | | |
 |---|---|
 | [PLAN](docs/PLAN.md) | phases, status, who does what |
+| [WORKFLOWS](docs/WORKFLOWS.md) | the big picture: making the model, installing, typing, in-app updates |
 | [ARCHITECTURE](docs/ARCHITECTURE.md) | how the Android app and extension work |
 | [TRAINING](docs/TRAINING.md) | Laya-Emoji: covering all emojis from the whole sentence |
 | [MANUAL-WORK](docs/MANUAL-WORK.md) | the owner's checklist (sudo, phone, accounts, decisions) |

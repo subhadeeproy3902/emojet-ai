@@ -78,6 +78,6 @@ Laya is an **encoder** (ModernBERT): every token looks at every other token, so 
 
 ## Privacy rules (non-negotiable)
 
-- No network access except the one-time model download (and checking for a newer model only when the user taps "check").
+- No network access except the one-time model download and update checks (only when the user taps "Check for updates", or an opt-in weekly Wi-Fi check). An update check downloads the public `updates.json`; it sends nothing about the user. Update flows: [WORKFLOWS.md](WORKFLOWS.md) §4.
 - Nothing typed is stored, except the optional local pick history (emoji + mood, never the text).
 - Password fields and deny-listed apps are never read.

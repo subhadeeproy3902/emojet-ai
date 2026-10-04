@@ -2,6 +2,26 @@
 
 Claude does all the coding, building, local installs in your home folder, testing on the laptop, commits and pushes. What's left is in this file: things that need your **password (sudo)**, your **phone**, your **accounts**, or **your taste**. Tick them off as you go and tell Claude.
 
+## ★ Before the next build session — do these, in this order
+
+1. **Phone ready** (§A step 3): OS version ×7 → Developer options → USB debugging **on** + Install via USB **on** (Mi account) → plug in → "Allow USB debugging?" → Always allow. Leave it plugged in when the session starts.
+2. **Kaggle account** (training, $0):
+   1. Sign up at kaggle.com (Google sign-in or email).
+   2. Settings → **Phone verification** (Kaggle only gives free GPUs to verified accounts).
+   3. Settings → **API** → **Create New Token** — your browser downloads `kaggle.json`. Leave it in `~/Downloads`; Claude moves it to `~/.config/kaggle/` and locks it (it's a password — never share it in chat, never in git).
+3. **Your messages file** — create `/mnt/shared/EndeavourOS/emojet/data/my-messages.txt` (the `data/` folder is never uploaded, so it stays private). One message per line, `|` between fields:
+   ```
+   bhai kya scene hai aaj party karte hain | 🎉🥳🍻 | enthusiastic, playful
+   it's fine. really. I'm fine. | 🙂🙃 | bitter | passive-aggressive
+   > do you want to come to the concert with me?
+   yes!! | 🎉🤩 | enthusiastic
+   ```
+   Fields: message | emojis you'd add | tones (optional) | style (optional). A line starting with `>` is the message you're replying to (applies to the next line). Aim for ~50 everyday messages + 5–10 per style and per hard tone (sarcastic, passive-aggressive, condescending, defensive, cynical, accusatory). Partial is fine — start with 20.
+4. **Quick answers** (one line each): tone chip yes/no/later · tone check before sending yes/no/later · their-tone yes/no/later · moods.json rows OK or changes.
+5. **Start the session**: open Claude Code in `/mnt/shared/EndeavourOS/emojet` (or your home folder) and say: *"Continue EmoJet — start Phase 1 and Phase T."* Claude reads `CLAUDE.md` + `docs/PLAN.md` and picks up from there.
+
+Nothing to install with sudo for this step. (Kaggle's command-line tool is only in the AUR; Claude will review its PKGBUILD or use a small script instead — decided next session.)
+
 ## A. Right now (unblocks Phase 1)
 
 - [x] **1. Tell Claude your phone** — Redmi Note 17 Pro (Claude reads chip/RAM/Android version over adb once it's connected). The APK itself targets *any* Android 8+ phone.
@@ -13,7 +33,7 @@ Claude does all the coding, building, local installs in your home folder, testin
   - `android-tools` — `adb`, to install the test app on your phone over USB.
   - `android-udev` — lets your normal user talk to the phone over USB (no root).
 
-  After this, Claude installs the Android SDK + NDK into `~/Android/Sdk` itself (Google's official SDK download into your home folder, ~4 GB, no sudo, nothing system-wide).
+  Done: Claude installed the Android SDK 36 + NDK r30 into `~/Android/Sdk` (2.7 GB, no sudo).
 - [ ] **3. Phone → developer mode (Redmi / Xiaomi HyperOS)**:
   1. Settings → About phone → tap **OS version** 7 times (on Xiaomi it's "OS version", not "Build number").
   2. Settings → Additional settings → **Developer options**:
@@ -36,9 +56,11 @@ On HyperOS, an overlay app needs more than stock Android: Settings → Apps → 
 - [ ] **Write ~50 messages the way you text** (English + Hinglish, short and long, with the emoji you'd add). Only your own words — no screenshots of other people's chats. This becomes the real test set; 23 samples is too few to tune on.
 - [ ] **Tone examples in your voice**: for each communication style (assertive, passive, aggressive, passive-aggressive) and the hard tones (sarcastic, condescending, defensive, cynical, accusatory), write 5–10 messages the way you or your friends would actually text them. No free dataset covers these well; your examples become test data and seeds. Template: [`shared/tones.json`](../shared/tones.json) has one example per style.
 - [ ] **Tone chip / tone check** (Phase 4 ideas): yes / no / later.
-- [ ] **Where Laya-Emoji gets trained** (Phase T): (A) this laptop's RTX 2050 — needs `sudo pacman -S python-pytorch-cuda python-transformers python-safetensors python-datasets` (~5 GB) and runs the GPU hot for 1–3 h per run; or (B) free Kaggle GPU — needs a free Kaggle account (phone-verified), you press Run on a notebook Claude writes. Recommended: B, with a small local pilot first. Details: [TRAINING.md](TRAINING.md).
-- [ ] **Model size** after Phase 1: Claude will give you size / speed / accuracy for the 8-bit and 4-bit files; you pick.
-- [ ] **Icon / colours** for the app and extension (or say "you choose").
+- [x] **Where Laya-Emoji gets trained** — decided 2026-10-05: **Kaggle** (free GPU). Needs the account + token from ★ step 2.
+- [x] **Model delivery** — decided 2026-10-05: small APK, model downloaded on first launch.
+- [x] **Updates** — decided 2026-10-05: from inside the app / extension, no uninstall ([WORKFLOWS.md](WORKFLOWS.md) §4).
+- [ ] **Model size** after Phase 1: Q4_0 (252 MB) is the current pick; confirm after the phone test.
+- [x] **Icon** — owner's logo + favicons (`assets/brand/`).
 
 ## C. Hands-on tests (details in [TESTING.md](TESTING.md))
 
