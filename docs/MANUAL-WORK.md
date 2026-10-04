@@ -9,9 +9,6 @@ Claude does all the coding, building, local installs in your home folder, testin
    - Without it, Claude copies the APK to the phone over the cable (`adb push`) and you tap it in Files → Downloads → Install. Same path real users take.
    - ⚠️ Never sign out of / reset a phone signed in to a Xiaomi account whose password you don't know (Find Device lock).
 2. ✅ **Kaggle account** (training, $0) — done 2026-10-05: account `subhadeep3902`, token in `.env` (`KAGGLE_API_TOKEN=KGAT_…`, `KAGGLE_USERNAME`), git-ignored, login verified.
-   1. Sign up at kaggle.com (Google sign-in or email).
-   2. Settings → **Phone verification** (Kaggle only gives free GPUs to verified accounts).
-   3. Settings → **API** → **Create New Token** — your browser downloads `kaggle.json`. Leave it in `~/Downloads`; Claude moves it to `~/.config/kaggle/` and locks it (it's a password — never share it in chat, never in git).
 3. **Your messages file** — create `/mnt/shared/EndeavourOS/emojet/data/my-messages.txt` (the `data/` folder is never uploaded, so it stays private). One message per line, `|` between fields:
    ```
    bhai kya scene hai aaj party karte hain | 🎉🥳🍻 | enthusiastic, playful
