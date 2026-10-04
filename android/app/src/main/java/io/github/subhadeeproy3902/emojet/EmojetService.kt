@@ -16,6 +16,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import java.util.concurrent.Executors
 
 /**
@@ -46,7 +47,9 @@ class EmojetService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        if (!Prefs.enabled(this)) {
+        val pkg = event.packageName?.toString()
+        if (pkg == packageName && event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        if (!Prefs.activeFor(this, if (pkg == keyboardPackage()) target?.packageName?.toString() else pkg)) {
             hide()
             return
         }
@@ -63,7 +66,6 @@ class EmojetService : AccessibilityService() {
                 schedule(textOf(node))
             }
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                val pkg = event.packageName?.toString()
                 if (pkg != null && pkg != target?.packageName?.toString() && pkg != keyboardPackage()) hide()
             }
         }
@@ -97,8 +99,12 @@ class EmojetService : AccessibilityService() {
         worker.execute {
             if (gen != generation) return@execute
             if (!engine.start()) return@execute
+            val reply = if (Prefs.useReply(this)) runCatching {
+                target?.let { ReplyFinder.find(rootInActiveWindow, it, text, resources.displayMetrics.heightPixels) }
+            }.getOrNull() else null
+            if (gen != generation) return@execute
             val emojis = runCatching {
-                ranker.suggest(engine.decide(ranker.request(text.takeLast(MAX_CHARS), null)))
+                ranker.suggest(engine, text.takeLast(MAX_CHARS), reply)
             }.getOrNull() ?: return@execute
             main.post {
                 if (gen == generation) {
@@ -123,6 +129,7 @@ class EmojetService : AccessibilityService() {
                     it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     insert(emoji)
                 }
+                setOnLongClickListener { disableHere(); true }
             })
         }
         val lp = (view.layoutParams as? WindowManager.LayoutParams) ?: WindowManager.LayoutParams(
@@ -141,6 +148,8 @@ class EmojetService : AccessibilityService() {
 
     private fun buildStrip() = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
+        isLongClickable = true
+        setOnLongClickListener { disableHere(); true }
         setPadding(dp(6), dp(2), dp(6), dp(2))
         background = GradientDrawable().apply {
             cornerRadius = dp(24).toFloat()
@@ -174,6 +183,15 @@ class EmojetService : AccessibilityService() {
             // Keep this row up so more emojis can be chained; new words bring a new row.
             shownFor = newText
         }
+    }
+
+    /** Long-press on the strip: switch EmoJet off in this app (back on from the EmoJet app). */
+    private fun disableHere() {
+        val pkg = target?.packageName?.toString() ?: return
+        Prefs.disableApp(this, pkg)
+        hide()
+        val name = runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)) }.getOrDefault(pkg)
+        Toast.makeText(this, "EmoJet is off in $name. Turn it back on in the EmoJet app.", Toast.LENGTH_LONG).show()
     }
 
     private fun hide() {

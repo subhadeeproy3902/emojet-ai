@@ -155,7 +155,7 @@ class MainActivity : Activity() {
                 else if (!engine.start()) "Engine didn't start.\n${engine.lastLog()}"
                 else {
                     val t0 = SystemClock.elapsedRealtime()
-                    val emojis = ranker.suggest(engine.decide(ranker.request("Happy birthday bro!! have an amazing year", null)))
+                    val emojis = ranker.suggest(engine, "Happy birthday bro!! have an amazing year", null)
                     "\"Happy birthday bro!! have an amazing year\" → ${emojis.joinToString(" ")}  (${SystemClock.elapsedRealtime() - t0} ms)"
                 }
             } catch (e: Exception) {

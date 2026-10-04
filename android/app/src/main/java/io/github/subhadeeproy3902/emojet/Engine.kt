@@ -27,6 +27,7 @@ class Engine private constructor(private val app: Context) {
     fun start(): Boolean {
         if (process?.isAlive == true) return true
         val model = models.installed() ?: return false
+        kind = model.kind
         port = ServerSocket(0).use { it.localPort }
         val bin = File(app.applicationInfo.nativeLibraryDir, "libllama_server.so")
         process = ProcessBuilder(
@@ -34,6 +35,7 @@ class Engine private constructor(private val app: Context) {
             "--host", "127.0.0.1", "--port", port.toString(), "--api-key", apiKey,
             "-t", fastCores().toString(),
             "-c", "512", "-b", "512", "-ub", "512", "-np", "1", "--cache-ram", "0", "--no-webui",
+            *(if (model.kind == "classifier") arrayOf("--embedding", "--pooling", "rank") else emptyArray()),
         ).redirectErrorStream(true).redirectOutput(File(app.cacheDir, "engine.log")).start()
 
         val deadline = System.currentTimeMillis() + 30_000
@@ -51,7 +53,20 @@ class Engine private constructor(private val app: Context) {
         process = null
     }
 
+    /** "decision" (Laya, mood question) or "classifier" (Laya-Emoji); valid after start(). */
+    @Volatile var kind: String = "decision"
+        private set
+
     fun decide(request: JSONObject): JSONObject = JSONObject(http("POST", "/v1/systemone", request.toString()))
+
+    /** Laya-Emoji: raw scores for every output (emojis, tones, styles, dimensions), no normalisation. */
+    fun classify(text: String): FloatArray {
+        val body = JSONObject().put("content", text).put("embd_normalize", -1).toString()
+        var v: Any = org.json.JSONArray(http("POST", "/embedding", body)).getJSONObject(0).get("embedding")
+        while (v is org.json.JSONArray && v.length() > 0 && v.get(0) is org.json.JSONArray) v = v.getJSONArray(0)
+        val arr = v as org.json.JSONArray
+        return FloatArray(arr.length()) { arr.getDouble(it).toFloat() }
+    }
 
     fun lastLog(): String = File(app.cacheDir, "engine.log").takeIf { it.isFile }?.readLines()?.takeLast(5)?.joinToString("\n") ?: ""
 

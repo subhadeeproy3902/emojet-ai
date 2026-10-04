@@ -14,7 +14,8 @@ import java.security.MessageDigest
  */
 class ModelManager(context: Context) {
 
-    data class Model(val id: String, val file: String, val size: Long, val sha256: String, val label: String, val urls: List<String>)
+    /** kind: "decision" = Laya answering the mood question; "classifier" = Laya-Emoji scoring every emoji at once. */
+    data class Model(val id: String, val file: String, val size: Long, val sha256: String, val label: String, val urls: List<String>, val kind: String)
 
     sealed class State {
         object Missing : State()
@@ -35,7 +36,7 @@ class ModelManager(context: Context) {
                 val m = arr.getJSONObject(i)
                 val urls = m.getJSONArray("urls")
                 Model(m.getString("id"), m.getString("file"), m.getLong("size"), m.getString("sha256"),
-                    m.getString("label"), List(urls.length()) { urls.getString(it) })
+                    m.getString("label"), List(urls.length()) { urls.getString(it) }, m.optString("kind", "decision"))
             }
         }
 

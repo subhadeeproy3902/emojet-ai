@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build training/kaggle/laya_emoji_train.ipynb (the Kaggle training notebook) for a given repo commit.
 
-  python3 training/build_notebook.py <commit>     # commit must be pushed: Kaggle downloads the data files from it
+  python3 training/build_notebook.py <commit> [--smoke]   # commit must be pushed; --smoke = quick 4,000-example test run
 """
 import json
 import pathlib
@@ -9,6 +9,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = sys.argv[1] if len(sys.argv) > 1 else "main"
+SMOKE = "--smoke" in sys.argv
 LLAMA_CPP_COMMIT = "2e7c58c5477478c8cf6e199cfaa5dcd5a4319c81"
 
 cells = []
@@ -45,7 +46,8 @@ REPO, COMMIT = "subhadeeproy3902/emojet", "{COMMIT}"
 RAW = f"https://raw.githubusercontent.com/{{REPO}}/{{COMMIT}}"
 LAYA_REV = "7b928d828b7b0e022f929d9bd2e44165aa270148"      # convaiinnovations/laya, same as the GGUF we run on phones
 LLAMA_CPP_COMMIT = "{LLAMA_CPP_COMMIT}"
-MAX_LEN, BATCH, EPOCHS = 64, 64, 3
+SMOKE = {SMOKE}                                            # True = quick end-to-end test on 4,000 examples
+MAX_LEN, BATCH, EPOCHS = 64, 64, (1 if SMOKE else 3)
 LR_ENCODER, LR_HEAD, WARMUP = 3e-5, 5e-4, 0.05
 TONE_W, STYLE_W, DIM_W = 1.0, 0.5, 0.5
 TIME_BUDGET_H = 7.0                                        # stop training early if a run gets this long
@@ -252,6 +254,8 @@ for x in random.sample(pool, 5_000):       # informative draft + unrelated reply
     add(x["text"], "reply-synth", reply=y["text"], emo=x["emo"], tones=x["tones"], style=x["style"])
 
 random.shuffle(ex)
+if SMOKE:
+    ex = ex[:4000]
 from collections import Counter
 print(f"{len(ex):,} training examples")
 for src, n in Counter(x["src"] for x in ex).most_common():
@@ -510,6 +514,6 @@ print(f"total notebook time {(time.time() - T_START) / 60:.0f} min")
 
 nb = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                                    "language_info": {"name": "python"}}, "nbformat": 4, "nbformat_minor": 5}
-out = ROOT / "training/kaggle/laya_emoji_train.ipynb"
+out = ROOT / ("training/kaggle/laya_emoji_smoke.ipynb" if SMOKE else "training/kaggle/laya_emoji_train.ipynb")
 out.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
 print(f"wrote {out} ({len(cells)} cells, data commit {COMMIT[:10]})")
