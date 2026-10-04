@@ -78,7 +78,7 @@ On HyperOS, an overlay app needs more than stock Android: Settings → Apps → 
 
 ## E. Release time
 
-- [ ] **Back up the APK signing key.** Claude generates it (`keytool`); you copy the keystore file + its password somewhere off the laptop (password manager, USB stick). If it's lost, people who installed EmoJet must uninstall before they can update. It never goes into git.
+- [ ] **Back up the APK signing key — created 2026-10-05.** Copy both `~/.config/emojet/emojet-release.jks` and `~/.config/emojet/keystore.properties` (holds the password) somewhere off the laptop (password manager / USB stick / private cloud). If they are lost, installed EmoJet apps can't be updated in place. They are never in git.
 - [ ] **Say "go" for each public GitHub Release** (APK + extension zip). Claude prepares it; publishing is a public action, so it waits for your OK.
 - [ ] **Firefox only:** normal Firefox can't keep an unsigned extension after a restart. Free fix: Mozilla signs it as "unlisted" (not a store listing, still $0) — needs a free Mozilla account + API key from you. Chrome / Edge / Brave: "Load unpacked" stays installed, nothing needed.
 - [ ] **Hugging Face account — only if** we publish our own model file. Steps in [HUGGINGFACE.md](HUGGINGFACE.md). Not needed otherwise.

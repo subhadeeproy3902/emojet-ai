@@ -100,6 +100,19 @@ Notes: emojinize was annotated by GPT models (stated in its card) and is encyclo
 
 Recommendation: **data prep + evaluation on the laptop (Claude), training on Kaggle (B)**; a small local pilot (A, frozen encoder + head only, ~minutes) first to prove the pipeline before spending Kaggle hours.
 
+## Notebooks on Kaggle (private, under the owner's account)
+
+| Notebook | What | Link |
+|---|---|---|
+| `emojet-laya-check` | step 1: Laya vs llama.cpp, Laya-Emoji shape, T4 speed | https://www.kaggle.com/code/subhadeep3902/emojet-laya-check |
+| `emojet-inspect-data` | layout of the Excel sarcasm files | https://www.kaggle.com/code/subhadeep3902/emojet-inspect-data |
+| `emojet-laya-emoji-smoke` | the training notebook on 4,000 examples, 1 epoch — catches bugs in minutes | https://www.kaggle.com/code/subhadeep3902/emojet-laya-emoji-smoke |
+| `emojet-laya-emoji-train` | **the full training run** | https://www.kaggle.com/code/subhadeep3902/emojet-laya-emoji-train |
+
+Built from `training/build_notebook.py <commit> [--smoke]` (data files are fetched from that exact repo commit) and sent with `python3 scripts/kaggle.py push … --gpu --internet`; results come back with `python3 scripts/kaggle.py wait <slug>` into `data/kaggle/<slug>/` (git-ignored). Open a notebook on Kaggle → **Output / Logs** to see every number; **Copy & Edit** to run the "Try it" cell with your own sentences.
+
+Model input text (training and every app must build exactly this): `replying to: <reply>\nmy message: <draft>` — first line only when replying.
+
 ## Steps
 
 1. ✅ [Claude] **Done 2026-10-05 on Kaggle** (`training/kaggle/laya_check.py`, private notebook `subhadeep3902/emojet-laya-check`, T4 16 GB, 83 s):
@@ -107,7 +120,7 @@ Recommendation: **data prep + evaluation on the laptop (Claude), training on Kag
    - Laya's encoder (170 tensors, prefix `encoder.`) loads into `ModernBertForSequenceClassification` with 1,977 outputs: **no missing / unexpected keys, hidden states identical (max diff 0.0)**. Model = 397.9 M parameters. Laya's own decision head (`head`, `scorer`, `type_emb`, `act_head`) is not used.
    - Full fine-tuning fits on the free T4: 107 samples/s at batch 64 × 48 tokens (11.1 GB peak), 70 samples/s at 32 × 64 (9.7 GB) → **~31–48 min per epoch of 200K samples**.
    - Kaggle stack: torch 2.11 (CUDA 12.8), transformers 5.16.
-2. [Claude] Build the dataset (`scripts/train/build-dataset.py`): sources above → `(text, reply, emojis[])`, split train / validation; your messages kept as the test set.
+2. ✅ [Claude] Dataset is built inside the notebook from the sources above + `training/data/` (seeds, GoEmotions map, eval sets). Note: the Hugging Face SARC copy has no sarcasm labels, so sarcasm comes from the CC-BY-4.0 Hinglish/English headlines (BM2002) + Apache-2.0 irony tweets.
 3. [Claude] Pilot: frozen encoder + head only, on the laptop CPU/GPU. Measure hit@6 on validation and on the 23 Phase-0 samples (mapped to acceptable emoji sets).
 4. [Claude + You] Full fine-tune (Kaggle or local LoRA).
 5. [Claude] Convert → GGUF → Q4_0; check llama.cpp gives the same scores as PyTorch; latency on the laptop.

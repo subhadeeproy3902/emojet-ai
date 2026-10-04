@@ -19,6 +19,12 @@ if [[ ! -f "$MODEL" ]]; then
 fi
 echo "model: $MODEL" >&2
 
+# Laya-Emoji is a classifier: llama-server returns its 1,977 scores from /embedding.
+EXTRA=()
+if [[ "$(basename "$MODEL" | tr 'A-Z' 'a-z')" == *emoji* ]]; then
+  EXTRA=(--embedding --pooling rank)
+fi
+
 # Laya evaluates the whole prompt (question + options + message) in one batch of at most
 # ~300 tokens, so 512 is plenty; one slot and no prompt cache keep memory low.
 exec "$LLAMA_SERVER" \
@@ -27,4 +33,4 @@ exec "$LLAMA_SERVER" \
   -t "$THREADS" \
   -c 512 -b 512 -ub 512 -np 1 \
   --cache-ram 0 \
-  --no-webui
+  --no-webui "${EXTRA[@]}"
