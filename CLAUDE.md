@@ -13,6 +13,8 @@ Start every session by reading `docs/PLAN.md` (phases, status, decisions) and `d
 - Updates happen **inside** the app/extension, never uninstall + reinstall (`docs/WORKFLOWS.md` §4).
 - Any Android 8+ phone; owner tests on a Redmi Note 17 Pro (HyperOS: "Install via USB" needed for adb installs).
 - sudo needs the owner's password: show the exact command, the owner runs it with `!`.
+- **The owner's phone is brand new — be careful with it.** Never root, unlock the bootloader, flash, factory-reset, or sign out of accounts. No `adb shell settings put`, no `pm uninstall`/`disable` of anything that isn't ours, no system tweaks. Only: read info (`getprop`, `dumpsys battery`), copy our own files to `/data/local/tmp/emojet` (deleted after each test), install/uninstall our own EmoJet APK. Keep load tests short; check battery temperature before (skip above 40 °C) and after. Say what will happen on the phone before doing it.
+- **Secrets:** the Kaggle token is in `.env` (`KAGGLE_API_TOKEN`, git-ignored). Never print it, never commit it, never send it anywhere except Kaggle's API.
 
 ## Machine facts
 

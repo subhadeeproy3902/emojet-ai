@@ -8,7 +8,7 @@ Claude does all the coding, building, local installs in your home folder, testin
    - **Install via USB** is optional. It needs a Xiaomi account: check Settings (top of the list) — if already signed in, turn it on; if not, either create a free one (Settings → Xiaomi Account → Create account, phone number + SMS) or skip it.
    - Without it, Claude copies the APK to the phone over the cable (`adb push`) and you tap it in Files → Downloads → Install. Same path real users take.
    - ⚠️ Never sign out of / reset a phone signed in to a Xiaomi account whose password you don't know (Find Device lock).
-2. **Kaggle account** (training, $0):
+2. **Kaggle account** (training, $0) — token saved 2026-10-05 in `.env` as `KAGGLE_API_TOKEN` (git-ignored, never committed). **Still needed: your Kaggle username** (shown on your Kaggle profile / top-right avatar → Your Profile; not secret). The 32-character key only works together with it.
    1. Sign up at kaggle.com (Google sign-in or email).
    2. Settings → **Phone verification** (Kaggle only gives free GPUs to verified accounts).
    3. Settings → **API** → **Create New Token** — your browser downloads `kaggle.json`. Leave it in `~/Downloads`; Claude moves it to `~/.config/kaggle/` and locks it (it's a password — never share it in chat, never in git).
