@@ -49,6 +49,8 @@ In llama.cpp, the part that turns `{state, questions}` into Laya prompts and tur
 | Browser extension | "emojet-core" compiled to WebAssembly (emscripten), run in an offscreen document / worker | browsers can't run a server process; same C++ as Android-later, so only one port |
 | Browser, optional fast path | the extension talks to a local `llama-server` if you run one | native speed for power users; off by default, never required |
 
+**Our llama.cpp patch** (`engine/llama.cpp-patches/0001-…`, applied by `scripts/build-engine.sh`): for classifier models, llama-server's `/embedding` returned only the first `n_embd` (1,024) of Laya-Emoji's 1,977 scores; the patch returns all `n_cls_out` scores. Verified 2026-10-05: llama.cpp vs PyTorch on the notebook's reference messages = identical tokens, all scores within 0.004, identical top-6 emojis.
+
 Laya is an **encoder** (ModernBERT): every token looks at every other token, so a cached "question + options" prefix cannot be reused across messages. Cost per suggestion grows linearly with prompt length — this is why the prompt is kept short.
 
 ## Android app
