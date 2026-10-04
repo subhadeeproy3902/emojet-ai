@@ -107,7 +107,7 @@ Recommendation: **data prep + evaluation on the laptop (Claude), training on Kag
 | `emojet-laya-check` | step 1: Laya vs llama.cpp, Laya-Emoji shape, T4 speed | https://www.kaggle.com/code/subhadeep3902/emojet-laya-check |
 | `emojet-inspect-data` | layout of the Excel sarcasm files | https://www.kaggle.com/code/subhadeep3902/emojet-inspect-data |
 | `emojet-laya-emoji-smoke` | the training notebook on 4,000 examples, 1 epoch — catches bugs in minutes | https://www.kaggle.com/code/subhadeep3902/emojet-laya-emoji-smoke |
-| `emojet-laya-emoji-train` | **the full training run** | https://www.kaggle.com/code/subhadeep3902/emojet-laya-emoji-train |
+| `emojet-model-train` (pushed as `emojet-laya-emoji-train`, renamed on Kaggle) | **the full training run** | https://www.kaggle.com/code/subhadeep3902/emojet-model-train |
 
 Built from `training/build_notebook.py <commit> [--smoke]` (data files are fetched from that exact repo commit) and sent with `python3 scripts/kaggle.py push … --gpu --internet`; results come back with `python3 scripts/kaggle.py wait <slug>` into `data/kaggle/<slug>/` (git-ignored). Open a notebook on Kaggle → **Output / Logs** to see every number; **Copy & Edit** to run the "Try it" cell with your own sentences.
 

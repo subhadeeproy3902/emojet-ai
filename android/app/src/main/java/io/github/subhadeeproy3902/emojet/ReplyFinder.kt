@@ -13,13 +13,18 @@ object ReplyFinder {
     private val TIME = Regex("""^\s*\d{1,2}[:.]\d{2}(\s?[AaPp]\.?[Mm]\.?)?\s*$""")
     private val SKIP_CLASSES = setOf("android.widget.Button", "android.widget.ImageButton", "android.widget.EditText")
 
-    fun find(root: AccessibilityNodeInfo?, input: AccessibilityNodeInfo, draft: String, screenHeight: Int): String? {
+    /** What was picked, without its words (for the debug log): view id, class, centered, length. */
+    @Volatile var lastPick: String = ""
+        private set
+
+    fun find(root: AccessibilityNodeInfo?, input: AccessibilityNodeInfo, draft: String, screenHeight: Int, screenWidth: Int): String? {
         root ?: return null
         val inputBounds = Rect().also { input.getBoundsInScreen(it) }
         val minTop = (screenHeight * 0.12).toInt()                 // below the title bar
         val maxGap = (screenHeight * 0.55).toInt()                 // ignore text far above the input
         var best: String? = null
         var bestBottom = Int.MIN_VALUE
+        lastPick = "none"
         val queue = ArrayDeque<AccessibilityNodeInfo>().apply { add(root) }
         var visited = 0
         while (queue.isNotEmpty() && visited < 600) {
@@ -33,10 +38,14 @@ object ReplyFinder {
             val b = Rect().also { n.getBoundsInScreen(it) }
             if (b.height() <= 0 || b.top < minTop) continue
             if (b.bottom > inputBounds.top + 4 || inputBounds.top - b.bottom > maxGap) continue
+            // date chips ("Today"), "unread messages", system notes: short and centered; message bubbles sit left/right
+            val centered = kotlin.math.abs(b.centerX() - screenWidth / 2) < screenWidth * 0.08 && b.width() < screenWidth * 0.6
+            if (centered && text.length < 24) continue
             // closest to the input wins; on the same row, the longer text (the bubble, not its label)
             if (b.bottom > bestBottom || (b.bottom == bestBottom && text.length > (best?.length ?: 0))) {
                 best = text
                 bestBottom = b.bottom
+                lastPick = "id=${n.viewIdResourceName} class=${n.className} len=${text.length} centered=$centered left=${b.left} right=${b.right}"
             }
         }
         return best?.take(300)

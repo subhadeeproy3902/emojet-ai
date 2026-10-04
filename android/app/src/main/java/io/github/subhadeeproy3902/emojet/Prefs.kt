@@ -22,4 +22,12 @@ object Prefs {
     fun disabledApps(c: Context): Set<String> = prefs(c).getStringSet("disabled_apps", emptySet()) ?: emptySet()
     fun disableApp(c: Context, pkg: String) = prefs(c).edit().putStringSet("disabled_apps", disabledApps(c) + pkg).apply()
     fun enableApp(c: Context, pkg: String) = prefs(c).edit().putStringSet("disabled_apps", disabledApps(c) - pkg).apply()
+
+    /** Where the user dragged the strip in this app: x = distance from the right edge, dy = height above the text box (px). */
+    fun stripOffset(c: Context, pkg: String): Pair<Int, Int>? =
+        prefs(c).getString("strip_$pkg", null)?.split(',')?.let { (x, dy) -> x.toInt() to dy.toInt() }
+    fun setStripOffset(c: Context, pkg: String, x: Int, dy: Int) = prefs(c).edit().putString("strip_$pkg", "$x,$dy").apply()
+    fun resetStripOffsets(c: Context) = prefs(c).edit().apply {
+        prefs(c).all.keys.filter { it.startsWith("strip_") }.forEach { remove(it) }
+    }.apply()
 }
