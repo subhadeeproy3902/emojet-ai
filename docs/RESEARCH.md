@@ -132,3 +132,9 @@ Conclusion: train tone as extra outputs of Laya-Emoji (same pass, no extra cost)
 | raquiba/Sarcasm_News_Headline, marcbishara/sarcasm-on-reddit, ToneStyle/TST100K | various | no licence stated | **no** |
 
 No permissive dataset exists for passive-aggressive, condescending, defensive or the 4 communication styles → hand-written examples (owner + Claude) and careful teacher labels.
+
+## 6. Laya internals (from its reference code, 2026-10-05)
+
+- `rl_common.DecisionModel` = ModernBERT-large encoder (28 layers, hidden 1024, fine-tuned by Laya's authors) + 2 plain pre-norm Transformer layers + a per-option scorer on each option's `[MASK]` marker; `act_head` is an extra "escalate" output llama.cpp doesn't expose. Trained 1 epoch, 7,313 updates, 1.96 h on one GPU.
+- Temperatures (`rl_agent_config.json`): per question type plus per option-count bucket — **`choice:11+` = 0.1006**, which is why 25-mood / 46-tone answers look like "1.00". To recover softer probabilities, raise them to the power ≈ 0.1 (`p^0.1006`, renormalised) before blending.
+- llama.cpp's `/v1/systemone` reproduces this code exactly (§ TRAINING step 1: 20/20 answers).

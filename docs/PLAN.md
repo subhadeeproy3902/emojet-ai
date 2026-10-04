@@ -78,7 +78,7 @@ The biggest unknown. Laptop: ~390 ms. A phone CPU is typically 2–4× slower, s
 
 Runs in parallel with Phase 1 (same encoder, so phone speed results carry over). Full plan: [TRAINING.md](TRAINING.md).
 
-1. [Claude] Prove Laya's encoder loads in PyTorch and matches llama.cpp.
+1. ✅ [Claude] Laya's encoder loads in PyTorch and matches llama.cpp exactly; Kaggle T4 fits full training (~31–48 min/epoch of 200K) — TRAINING.md step 1.
 2. [Claude] Build the dataset (emojinize 108K sentences + GoEmotions 58K + Laya-teacher + CLDR coverage; tone: GoEmotions map, SARC sarcasm, Stanford politeness, Pavlick formality, Jigsaw toxicity, hand-written styles); your messages = test set.
    - ✅ Tone taxonomy researched (`shared/tones.json`) and untrained-Laya tone baseline measured: tone 18/25 top-3, style 6/13 (`scripts/test-tones.py`).
 3. [Claude] Laptop pilot: frozen encoder + emoji head.

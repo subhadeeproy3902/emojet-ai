@@ -102,7 +102,11 @@ Recommendation: **data prep + evaluation on the laptop (Claude), training on Kag
 
 ## Steps
 
-1. [Claude] Load Laya's safetensors in PyTorch, confirm the encoder weights map 1:1 onto `ModernBertModel` (sanity check: same hidden states as llama.cpp for a test sentence).
+1. ✅ [Claude] **Done 2026-10-05 on Kaggle** (`training/kaggle/laya_check.py`, private notebook `subhadeep3902/emojet-laya-check`, T4 16 GB, 83 s):
+   - Laya's own PyTorch code vs our llama.cpp BF16 engine on mood / tone / style / yes-no / score questions: **20/20 identical answers**, identical token counts, probabilities within ~0.002 (worst 0.064 on a near-tie, fp16 vs bf16).
+   - Laya's encoder (170 tensors, prefix `encoder.`) loads into `ModernBertForSequenceClassification` with 1,977 outputs: **no missing / unexpected keys, hidden states identical (max diff 0.0)**. Model = 397.9 M parameters. Laya's own decision head (`head`, `scorer`, `type_emb`, `act_head`) is not used.
+   - Full fine-tuning fits on the free T4: 107 samples/s at batch 64 × 48 tokens (11.1 GB peak), 70 samples/s at 32 × 64 (9.7 GB) → **~31–48 min per epoch of 200K samples**.
+   - Kaggle stack: torch 2.11 (CUDA 12.8), transformers 5.16.
 2. [Claude] Build the dataset (`scripts/train/build-dataset.py`): sources above → `(text, reply, emojis[])`, split train / validation; your messages kept as the test set.
 3. [Claude] Pilot: frozen encoder + head only, on the laptop CPU/GPU. Measure hit@6 on validation and on the 23 Phase-0 samples (mapped to acceptable emoji sets).
 4. [Claude + You] Full fine-tune (Kaggle or local LoRA).
