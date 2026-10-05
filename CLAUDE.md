@@ -1,6 +1,6 @@
-# EmoJet — context for Claude Code
+# EmoJet AI (app) — context for Claude Code
 
-Free, offline emoji suggestions (Android overlay APK + browser extension) powered only by **Laya**. Owner: Subhadeep Roy (GitHub subhadeeproy3902), a Linux beginner — explain in plain words.
+Free, offline emoji suggestions (Android overlay APK + browser extension). The model is **Emojet** (v1, v2…; a fine-tune of Laya), which lives in its own repo next to this one: `/mnt/shared/EndeavourOS/emojet` (github.com/subhadeeproy3902/emojet). This repo = the app (github.com/subhadeeproy3902/emojet-ai). Owner: Subhadeep Roy (GitHub subhadeeproy3902), a Linux beginner — explain in plain words.
 
 Start every session by reading `docs/PLAN.md` (phases, status, decisions) and `docs/MANUAL-WORK.md` (what the owner still has to do).
 
@@ -18,9 +18,9 @@ Start every session by reading `docs/PLAN.md` (phases, status, decisions) and `d
 
 ## Machine facts
 
-- Repo lives on E: (`/mnt/shared/EndeavourOS/emojet-ai`, NTFS, **no exec bit**) → run scripts with `bash`/`python3`; binaries and SDKs live in `/home`.
+- Repos live on E: (`/mnt/shared/EndeavourOS/emojet-ai` app, `/mnt/shared/EndeavourOS/emojet` model; NTFS, **no exec bit**) → run scripts with `bash`/`python3`; binaries and SDKs live in `/home`.
 - llama.cpp built from source: `~/build/llama.cpp/build/bin/` (Laya `/v1/systemone` support, PR #29818). Android SDK + NDK r30: `~/Android/Sdk`. JDK 21 + adb installed.
 - Engine builds: `bash scripts/build-engine.sh [host|android|all]` = pinned llama.cpp commit + our patches in `engine/llama.cpp-patches/` (0001: `/embedding` returns all classifier scores, needed for Emojet-v1). Android engine: `~/build/llama.cpp/build-android` (NDK r30, arm64-v8a, KleidiAI). Phone test: `bash scripts/phone-bench.sh` (owner's REDMI Note 17 Pro 5G, adb serial 4b8ff91f; 4 threads best, ~306–356 ms).
-- Models in `models/` (gitignored): `bash scripts/get-model.sh`, `bash scripts/quantize.sh Q4_0`.
+- Model files in the model repo's `models/` (gitignored); app scripts read `../emojet/models`. Models: `bash scripts/get-model.sh`, `bash scripts/quantize.sh Q4_0`.
 - Dev server: `bash scripts/dev-server.sh &` → `python3 scripts/test-prompts.py` (moods) / `python3 scripts/test-tones.py` (tone). Stop with `pkill -x llama-server`.
 - Machine changes are also logged in `~/CHANGELOG.md` (the owner's system log).
