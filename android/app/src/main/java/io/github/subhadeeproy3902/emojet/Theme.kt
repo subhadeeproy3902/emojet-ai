@@ -3,6 +3,7 @@ package io.github.subhadeeproy3902.emojet
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Typeface
+import android.graphics.drawable.ClipDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
@@ -16,39 +17,46 @@ import android.widget.Switch
 import android.widget.TextView
 
 /**
- * EmoJet design system. One accent (glossy yellow) used only for the primary action, the current
- * step and the emoji strip; everything else is warm paper, white surfaces, ink and hairlines.
- * Type: Syne (headings) + DM Sans (everything else). Spacing on an 8 dp grid.
+ * EmoJet design system, taken from the splash: midnight-indigo night, soft violet glow, glass
+ * cards, the emoji's glossy yellow for the one primary action, and the neon trail gradient only
+ * for progress. Type: Syne (headings) + DM Sans (text). Spacing on an 8 dp grid.
  */
 object Theme {
-    // colour tokens
-    const val PAPER = 0xFFFAF7F0.toInt()
-    const val SURFACE = 0xFFFFFFFF.toInt()
-    const val INK = 0xFF17150F.toInt()
-    const val INK2 = 0xFF6F685A.toInt()
-    const val INK3 = 0xFFA39C8C.toInt()
-    const val LINE = 0xFFECE5D6.toInt()
-    const val ACCENT = 0xFFFFD23F.toInt()
-    const val ACCENT_DEEP = 0xFFF5B800.toInt()
-    const val ACCENT_EDGE = 0xFFD9A300.toInt()
-    const val ACCENT_SOFT = 0xFFFFF4CC.toInt()
-    const val OK = 0xFF1F9D55.toInt()
+    // colour tokens (sampled from assets/brand/splash.png)
+    const val NIGHT = 0xFF040429.toInt()        // background
+    const val SURFACE = 0xFF0F0E3F.toInt()      // cards
+    const val SURFACE2 = 0xFF17165A.toInt()     // inputs, chips
+    const val LINE = 0xFF24236A.toInt()         // hairlines
+    const val INK = 0xFFF5F3FF.toInt()          // primary text
+    const val INK2 = 0xFFB8B5E0.toInt()         // secondary text
+    const val INK3 = 0xFF7C79AE.toInt()         // hints, captions
+    const val ACCENT = 0xFFFABE3C.toInt()       // the emoji's yellow
+    const val ON_ACCENT = 0xFF1A1033.toInt()    // text on yellow
+    const val MAGENTA = 0xFFD32ACF.toInt()
+    const val VIOLET = 0xFF6A2CF0.toInt()
+    const val OK = 0xFF34D399.toInt()
 
-    // radii (dp)
-    const val R_CARD = 20
+    const val R_CARD = 22
     const val R_INPUT = 16
     const val R_PILL = 26
 
-    lateinit var display: Typeface; private set     // Syne 700
-    lateinit var heading: Typeface; private set     // Syne 600
-    lateinit var body: Typeface; private set        // DM Sans 400
-    lateinit var medium: Typeface; private set      // DM Sans 500
-    lateinit var semibold: Typeface; private set    // DM Sans 600
+    lateinit var display: Typeface; private set
+    lateinit var heading: Typeface; private set
+    lateinit var body: Typeface; private set
+    lateinit var medium: Typeface; private set
+    lateinit var semibold: Typeface; private set
 
     fun init(c: Context) {
         if (::display.isInitialized) return
-        fun font(file: String, axes: String) = runCatching {
-            Typeface.Builder(c.assets, "fonts/$file").setFontVariationSettings(axes).build()
+        // With the system font as fallback (Android 10+), so symbols the font lacks (✕, ⋮, →) still render.
+        fun font(file: String, axes: String): Typeface = runCatching {
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                val f = android.graphics.fonts.Font.Builder(c.assets, "fonts/$file").setFontVariationSettings(axes).build()
+                Typeface.CustomFallbackBuilder(android.graphics.fonts.FontFamily.Builder(f).build())
+                    .setSystemFallback("sans-serif").build()
+            } else {
+                Typeface.Builder(c.assets, "fonts/$file").setFontVariationSettings(axes).build()
+            }
         }.getOrDefault(Typeface.DEFAULT)
         display = font("Syne.ttf", "'wght' 700")
         heading = font("Syne.ttf", "'wght' 600")
@@ -67,23 +75,45 @@ object Theme {
         stroke?.let { setStroke(dp(c, 1), it) }
     }
 
-    /** The one glossy element: soft yellow gradient, a gentle top highlight, a thin darker edge. */
+    /** Night with a soft violet/magenta glow behind the top of the page, like the light behind the splash emoji. */
+    fun background(c: Context): Drawable {
+        val glow = GradientDrawable().apply {
+            gradientType = GradientDrawable.RADIAL_GRADIENT
+            colors = intArrayOf(0x553A1FC8, 0x22D32ACF, 0x00040429)
+            gradientRadius = dp(c, 420).toFloat()
+            setGradientCenter(0.85f, 0.0f)
+        }
+        return LayerDrawable(arrayOf(GradientDrawable().apply { setColor(NIGHT) }, glow))
+    }
+
+    /** The emoji's glossy yellow: gradient, gentle top highlight, slightly deeper edge. */
     fun gloss(c: Context, radiusDp: Number): Drawable {
         val r = dp(c, radiusDp).toFloat()
-        val base = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFFFFE27A.toInt(), ACCENT, 0xFFF7C21C.toInt())).apply {
+        val base = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFFFFD877.toInt(), ACCENT, 0xFFF0A21E.toInt())).apply {
             cornerRadius = r
-            setStroke(dp(c, 1), ACCENT_EDGE)
+            setStroke(dp(c, 1), 0xFFD98B12.toInt())
         }
-        val shine = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x66FFFFFF, 0x00FFFFFF)).apply { cornerRadius = r }
+        // full-size highlight that fades out by the middle: follows the pill's curve exactly
+        val shine = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x55FFFFFF, 0x00FFFFFF, 0x00FFFFFF)).apply { cornerRadius = r }
         return LayerDrawable(arrayOf(base, shine)).apply {
             val i = dp(c, 1)
-            setLayerInset(1, i, i, i, 0)
-            setLayerGravity(1, Gravity.TOP or Gravity.FILL_HORIZONTAL)
-            setLayerHeight(1, dp(c, 20))
+            setLayerInset(1, i, i, i, i)
         }
     }
 
-    fun ripple(content: Drawable?, mask: Drawable? = null) = RippleDrawable(ColorStateList.valueOf(0x1F17150F), content, mask)
+    /** Progress bar in the splash's neon trail colours. */
+    fun trailProgress(c: Context): Drawable {
+        val track = round(c, SURFACE2, 4)
+        val fill = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(ACCENT, MAGENTA, VIOLET)).apply {
+            cornerRadius = dp(c, 4).toFloat()
+        }
+        return LayerDrawable(arrayOf(track, ClipDrawable(fill, Gravity.START, ClipDrawable.HORIZONTAL))).apply {
+            setId(0, android.R.id.background)
+            setId(1, android.R.id.progress)
+        }
+    }
+
+    fun ripple(content: Drawable?, mask: Drawable? = null) = RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), content, mask)
 
     fun card(c: Context) = LinearLayout(c).apply {
         orientation = LinearLayout.VERTICAL
@@ -118,9 +148,9 @@ object Theme {
         text = s
         isAllCaps = false
         typeface = semibold
-        setTextColor(INK)
+        setTextColor(ON_ACCENT)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-        background = ripple(gloss(c, R_PILL), round(c, ACCENT, R_PILL))
+        background = RippleDrawable(ColorStateList.valueOf(0x331A1033), gloss(c, R_PILL), round(c, ACCENT, R_PILL))
         stateListAnimator = null
         minHeight = dp(c, 52)
         setPadding(dp(c, 20), 0, dp(c, 20), 0)
@@ -133,7 +163,7 @@ object Theme {
         typeface = medium
         setTextColor(INK)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-        background = ripple(round(c, SURFACE, R_PILL, LINE), round(c, SURFACE, R_PILL))
+        background = ripple(round(c, SURFACE2, R_PILL, LINE), round(c, SURFACE2, R_PILL))
         stateListAnimator = null
         minHeight = dp(c, 48)
         setPadding(dp(c, 18), 0, dp(c, 18), 0)
@@ -142,12 +172,11 @@ object Theme {
 
     fun switch(c: Context, on: Boolean, onChange: (Boolean) -> Unit) = Switch(c).apply {
         isChecked = on
-        thumbTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(INK, SURFACE))
-        trackTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(ACCENT, LINE))
+        thumbTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(ACCENT, INK3))
+        trackTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(0xFF7A5A1A.toInt(), LINE))
         setOnCheckedChangeListener { _, v -> onChange(v) }
     }
 
-    /** Status chip: coloured dot + label on a white pill. */
     fun chip(c: Context): TextView = tv(c, "", 13.5f, medium, INK).apply {
         background = round(c, SURFACE, 16, LINE)
         setPadding(dp(c, 12), dp(c, 6), dp(c, 12), dp(c, 6))
@@ -160,18 +189,18 @@ object Theme {
         setSize(dp(c, 8), dp(c, 8))
     }
 
-    /** Step badge: done = ink ✓, current = glossy number, later = outlined number. */
+    /** Step badge: done = soft-white ✓, current = glossy yellow number, later = outlined number. */
     fun stepBadge(c: Context, view: TextView, n: Int, state: Int) {
         view.gravity = Gravity.CENTER
         view.typeface = semibold
         view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
         when (state) {
             STEP_DONE -> {
-                view.text = "✓"; view.setTextColor(SURFACE)
+                view.text = "✓"; view.setTextColor(NIGHT)
                 view.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(INK) }
             }
             STEP_NOW -> {
-                view.text = "$n"; view.setTextColor(INK)
+                view.text = "$n"; view.setTextColor(ON_ACCENT)
                 view.background = gloss(c, 14)
             }
             else -> {
@@ -188,5 +217,19 @@ object Theme {
     fun hairline(c: Context) = View(c).apply {
         setBackgroundColor(LINE)
         layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(c, 1))
+    }
+
+    /** macOS-dock style glass for the emoji strip: smoky dark, soft light edge, top sheen. Neutral over any app. */
+    fun dockGlass(c: Context, radiusDp: Number): Drawable {
+        val r = dp(c, radiusDp).toFloat()
+        val body = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xEB3A3A44.toInt(), 0xEB24242C.toInt(), 0xEB18181E.toInt())).apply {
+            cornerRadius = r
+            setStroke(dp(c, 1), 0x33FFFFFF)
+        }
+        val sheen = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x24FFFFFF, 0x00FFFFFF, 0x00FFFFFF)).apply { cornerRadius = r }
+        return LayerDrawable(arrayOf(body, sheen)).apply {
+            val i = dp(c, 1)
+            setLayerInset(1, i, i, i, i)
+        }
     }
 }

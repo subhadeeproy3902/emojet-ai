@@ -19,6 +19,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -97,9 +98,9 @@ class MainActivity : Activity() {
         models = ModelManager(this)
         updates = UpdateManager(this)
         @Suppress("DEPRECATION")
-        window.statusBarColor = Theme.PAPER
+        window.statusBarColor = Theme.NIGHT
         @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        window.navigationBarColor = Theme.NIGHT
 
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -122,14 +123,44 @@ class MainActivity : Activity() {
             clipToPadding = true
             addView(col)
         }
-        setContentView(LinearLayout(this).apply {
+        val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Theme.PAPER)
+            background = Theme.background(context)
             addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
             setOnApplyWindowInsetsListener { v, insets ->
                 @Suppress("DEPRECATION")
                 v.setPadding(0, insets.systemWindowInsetTop, 0, insets.systemWindowInsetBottom)
                 insets
+            }
+        }
+        val root = FrameLayout(this).apply { addView(page) }
+        if (savedInstanceState == null) root.addView(splash())
+        setContentView(root)
+    }
+
+    /** Cold-start splash: the brand artwork full-bleed, wordmark at the bottom, then a soft fade into the app. */
+    private fun splash() = FrameLayout(this).apply {
+        setBackgroundColor(Theme.NIGHT)
+        isClickable = true
+        addView(ImageView(context).apply {
+            setImageResource(R.drawable.splash)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }, FrameLayout.LayoutParams(-1, -1))
+        addView(LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            addView(Theme.displayText(context, "EmoJet").apply { gravity = Gravity.CENTER })
+            addView(Theme.secondaryText(context, "The right emoji, every time.").apply { gravity = Gravity.CENTER }, lp(top = 8))
+        }, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { bottomMargin = dp(context, 72) })
+        // start the clock on the first frame actually drawn, so slow phones still see the full artwork
+        val splashView = this
+        viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                splashView.viewTreeObserver.removeOnPreDrawListener(this)
+                splashView.postDelayed({
+                    splashView.animate().alpha(0f).setDuration(420).withEndAction { (splashView.parent as? ViewGroup)?.removeView(splashView) }.start()
+                }, 1200)
+                return true
             }
         })
     }
@@ -154,8 +185,7 @@ class MainActivity : Activity() {
         step1 = Step(1, "Getting ready")
         progress = ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 1000
-            progressTintList = ColorStateList.valueOf(Theme.ACCENT_DEEP)
-            progressBackgroundTintList = ColorStateList.valueOf(Theme.LINE)
+            progressDrawable = Theme.trailProgress(context)
         }
         step1.actions.addView(progress, LinearLayout.LayoutParams(-1, dp(context, 6)).apply { topMargin = dp(context, 12) })
         progressText = Theme.caption(context, "").also { step1.actions.addView(it, lp(top = 6)) }
@@ -195,7 +225,7 @@ class MainActivity : Activity() {
             setHintTextColor(Theme.INK3)
             minLines = 2
             gravity = Gravity.TOP
-            background = Theme.round(context, Theme.PAPER, Theme.R_INPUT, Theme.LINE)
+            background = Theme.round(context, Theme.SURFACE2, Theme.R_INPUT, Theme.LINE)
             setPadding(dp(context, 14), dp(context, 12), dp(context, 14), dp(context, 12))
         }, lp(top = 14))
         upgradeBtn = Theme.primaryButton(context, "Get the improved model") { models.startDownload(false); refresh() }.apply { visibility = View.GONE }
@@ -241,7 +271,7 @@ class MainActivity : Activity() {
             "Uses the internet once to get ready, and when you check for updates.",
         )) {
             addView(Theme.secondaryText(context, line).apply {
-                setCompoundDrawablesRelativeWithIntrinsicBounds(Theme.dot(context, Theme.ACCENT_DEEP), null, null, null)
+                setCompoundDrawablesRelativeWithIntrinsicBounds(Theme.dot(context, Theme.ACCENT), null, null, null)
                 compoundDrawablePadding = dp(context, 12)
             }, lp(top = 12))
         }
@@ -332,7 +362,7 @@ class MainActivity : Activity() {
 
         val on = Prefs.enabled(this)
         val (dotColor, label) = when {
-            !allSet -> Theme.ACCENT_DEEP to "Setting up"
+            !allSet -> Theme.ACCENT to "Setting up"
             !on -> Theme.INK3 to "Off"
             paused() -> Theme.INK3 to "Paused"
             else -> Theme.OK to "Ready"
@@ -472,7 +502,7 @@ class MainActivity : Activity() {
         typeface = Theme.semibold
         setTextColor(Theme.INK)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f)
-        background = Theme.ripple(Theme.round(context, Theme.ACCENT_SOFT, 14), Theme.round(context, Theme.ACCENT_SOFT, 14))
+        background = Theme.ripple(Theme.round(context, Theme.SURFACE2, 14, Theme.LINE), Theme.round(context, Theme.SURFACE2, 14))
         setPadding(dp(context, 14), dp(context, 8), dp(context, 14), dp(context, 8))
         setOnClickListener { onClick() }
     }

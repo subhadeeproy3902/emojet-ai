@@ -158,14 +158,19 @@ class EmojetService : AccessibilityService() {
         for (emoji in emojis) {
             emojiRow.addView(TextView(this).apply {
                 text = emoji
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
-                setPadding(dp(6), dp(2), dp(6), dp(2))
-                background = Theme.ripple(null, Theme.round(this@EmojetService, Theme.ACCENT_SOFT, 16))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 25f)
+                setPadding(dp(7), dp(4), dp(7), dp(4))
+                background = Theme.ripple(null, Theme.round(this@EmojetService, 0x22FFFFFF, 14))
+                // dock-style magnification while the finger is on it
+                setOnTouchListener { v, e ->
+                    when (e.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> v.animate().scaleX(1.28f).scaleY(1.28f).translationY(-dp(6).toFloat()).setDuration(110).start()
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> v.animate().scaleX(1f).scaleY(1f).translationY(0f).setDuration(160).start()
+                    }
+                    false
+                }
                 setOnClickListener {
                     it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    it.animate().scaleX(1.35f).scaleY(1.35f).setDuration(90).withEndAction {
-                        it.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
-                    }.start()
                     insert(emoji)
                 }
             })
@@ -198,33 +203,34 @@ class EmojetService : AccessibilityService() {
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(2), dp(4), dp(2), dp(4))
-            background = Theme.gloss(this@EmojetService, 24)
-            elevation = dp(6).toFloat()
+            setPadding(dp(4), dp(5), dp(4), dp(5))
+            background = Theme.dockGlass(this@EmojetService, 22)
+            elevation = dp(14).toFloat()
+            clipChildren = false
+            clipToPadding = false
         }
         val grip = TextView(this).apply {
             text = "⠿"
-            setTextColor(0x7317150F)
+            setTextColor(0x8CFFFFFF.toInt())
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
             setPadding(dp(10), dp(4), dp(4), dp(4))
             contentDescription = "Move the emoji strip"
         }
         grip.setOnTouchListener(DragToMove(bar))
         bar.addView(grip)
-        row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
         bar.addView(row)
-        bar.addView(TextView(this).apply {
-            text = "✕"
-            typeface = Theme.medium
-            setTextColor(0x7317150F)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            setPadding(dp(6), dp(4), dp(12), dp(4))
+        bar.addView(android.widget.ImageView(this).apply {
+            setImageResource(R.drawable.ic_close)
+            imageAlpha = 150
+            setPadding(dp(8), dp(8), dp(12), dp(8))
             contentDescription = "Close until you type a new word"
+            background = Theme.ripple(null, Theme.round(this@EmojetService, 0x22FFFFFF, 14))
             setOnClickListener {
                 dismissedWords = words(target?.let(::textOf).orEmpty())
                 hide()
             }
-        })
+        }, LinearLayout.LayoutParams(dp(36), dp(36)))
         return bar
     }
 
