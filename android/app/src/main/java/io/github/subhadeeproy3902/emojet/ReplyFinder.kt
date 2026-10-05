@@ -10,6 +10,10 @@ import android.view.accessibility.AccessibilityNodeInfo
  * latest message on screen. Used only for the current suggestion, never stored.
  */
 object ReplyFinder {
+    /** [quoted] = the user picked this message to reply to (a quote box above the input), not just the latest message. */
+    data class Found(val text: String, val quoted: Boolean)
+    private val QUOTE_ID = Regex("quote|reply|replied", RegexOption.IGNORE_CASE)
+
     private val TIME = Regex("""^\s*\d{1,2}[:.]\d{2}(\s?[AaPp]\.?[Mm]\.?)?\s*$""")
     private val SKIP_CLASSES = setOf("android.widget.Button", "android.widget.ImageButton", "android.widget.EditText")
 
@@ -17,13 +21,14 @@ object ReplyFinder {
     @Volatile var lastPick: String = ""
         private set
 
-    fun find(root: AccessibilityNodeInfo?, input: AccessibilityNodeInfo, draft: String, screenHeight: Int, screenWidth: Int): String? {
+    fun find(root: AccessibilityNodeInfo?, input: AccessibilityNodeInfo, draft: String, screenHeight: Int, screenWidth: Int): Found? {
         root ?: return null
         val inputBounds = Rect().also { input.getBoundsInScreen(it) }
         val minTop = (screenHeight * 0.12).toInt()                 // below the title bar
         val maxGap = (screenHeight * 0.55).toInt()                 // ignore text far above the input
         var best: String? = null
         var bestBottom = Int.MIN_VALUE
+        var bestQuoted = false
         lastPick = "none"
         val queue = ArrayDeque<AccessibilityNodeInfo>().apply { add(root) }
         var visited = 0
@@ -45,9 +50,10 @@ object ReplyFinder {
             if (b.bottom > bestBottom || (b.bottom == bestBottom && text.length > (best?.length ?: 0))) {
                 best = text
                 bestBottom = b.bottom
+                bestQuoted = n.viewIdResourceName?.let(QUOTE_ID::containsMatchIn) == true
                 lastPick = "id=${n.viewIdResourceName} class=${n.className} len=${text.length} centered=$centered left=${b.left} right=${b.right}"
             }
         }
-        return best?.take(300)
+        return best?.let { Found(it.take(300), bestQuoted) }
     }
 }

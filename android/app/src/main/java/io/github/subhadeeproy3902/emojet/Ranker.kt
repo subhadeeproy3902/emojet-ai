@@ -42,7 +42,7 @@ class Ranker(context: Context) {
         emojis = List(cat.length()) { cat.getJSONObject(it).getString("e") }
         isTopic = BooleanArray(cat.length()) {
             val e = cat.getJSONObject(it)
-            e.getString("group") in TOPIC_GROUPS && e.getString("e") !in VIBE
+            (e.getString("group") in TOPIC_GROUPS || e.getString("sub") in TOPIC_SUBS) && e.getString("e") !in VIBE
         }
         val index = emojis.withIndex().associate { (i, e) -> e to i }
         val t = JSONObject(assets.open("tones.json").bufferedReader().use { it.readText() })
@@ -129,6 +129,9 @@ class Ranker(context: Context) {
 
     companion object {
         private val TOPIC_GROUPS = setOf("Animals & Nature", "Food & Drink", "Travel & Places", "Activities", "Objects", "Flags")
+        // "things" outside the topic groups: 🤖👻👽, 👮🧑‍🍳🧑‍💻, ⚽ players, 🧛 fantasy, ♈ zodiac, 🛐 religion, ⚠️ signs
+        private val TOPIC_SUBS = setOf("face-costume", "person-role", "person-activity", "person-sport", "person-fantasy",
+            "person-resting", "family", "zodiac", "religion", "warning", "transport-sign")
         private val VIBE = setOf("🎉", "🎊", "✨", "🔥", "💥", "⭐", "🌟", "💫", "⚡", "🌈", "🎈", "🎆", "🎇", "🪩")
         private val SKIP_TONE_BOOST = setOf("neutral", "friendly")
         private const val TOPIC_WINDOW = 4.5f

@@ -51,6 +51,11 @@ class EmojetService : AccessibilityService() {
     private var dismissedText: String? = null
     private var row: LinearLayout? = null
     @Volatile private var generation = 0
+    private var lastContentCheck = 0L
+    @Volatile private var replyShown: String? = null
+    private var tonePopup: View? = null
+    private var current: List<String>? = null
+    private val glyphs = android.graphics.Paint()
 
     override fun onServiceConnected() {
         Theme.init(this)
@@ -92,6 +97,16 @@ class EmojetService : AccessibilityService() {
                 }
                 schedule(textOf(node))
             }
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                // only interesting while the box is empty: a quote box may have appeared (swipe to reply)
+                val t = target ?: return
+                if (pkg != t.packageName?.toString()) return
+                val now = SystemClock.elapsedRealtime()
+                if (now - lastContentCheck < 400) return
+                lastContentCheck = now
+                if (!t.refresh() || textOf(t).isNotBlank()) return
+                schedule("")
+            }
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 if (pkg != null && pkg != target?.packageName?.toString() && pkg != keyboardPackage()) {
                     log { "  window change from $pkg (target ${target?.packageName}) -> hide" }
@@ -110,14 +125,25 @@ class EmojetService : AccessibilityService() {
         super.onDestroy()
     }
 
-    private fun textOf(node: AccessibilityNodeInfo): String =
-        if (node.isShowingHintText) "" else node.text?.toString() ?: ""
+    /** The typed text. Some apps (WhatsApp) report the grey placeholder ("Message") as text: then it's "". */
+    private fun textOf(node: AccessibilityNodeInfo): String {
+        if (node.isShowingHintText) return ""
+        val t = node.text?.toString() ?: return ""
+        if (t == node.hintText?.toString()) return ""
+        // real text always has the cursor somewhere after a character; a placeholder keeps it at 0
+        if (node.textSelectionStart == 0 && node.textSelectionEnd == 0) return ""
+        return t
+    }
 
     /** Debounce: ask the model 250 ms after typing pauses. Unchanged text is not asked again (dedup). */
     private fun schedule(text: String) {
         pending?.let(main::removeCallbacks)
         if (text.isBlank()) {
-            hide()
+            // empty box: no strip, unless the user picked a message to reply to (then: emojis for that message)
+            if (shownFor != "") hide()
+            if (Prefs.useReply(this) && target?.packageName?.toString() != packageName) {
+                pending = Runnable { suggest("") }.also { main.postDelayed(it, DEBOUNCE_MS) }
+            }
             return
         }
         if (text == shownFor && strip?.parent != null) return
@@ -136,17 +162,26 @@ class EmojetService : AccessibilityService() {
             if (gen != generation) return@execute
             if (!engine.start()) { log { "engine not started" }; return@execute }
             val ownScreen = target?.packageName?.toString() == packageName     // EmoJet's own "Try it" box has no conversation
-            val reply = if (Prefs.useReply(this) && !ownScreen) runCatching {
+            val found = if (Prefs.useReply(this) && !ownScreen) runCatching {
                 target?.let { ReplyFinder.find(rootInActiveWindow, it, text, resources.displayMetrics.heightPixels, resources.displayMetrics.widthPixels) }
             }.getOrNull() else null
             if (gen != generation) return@execute
+            if (text.isBlank()) {
+                if (found?.quoted != true) {                                        // empty box, no reply picked: no strip
+                    main.post { if (gen == generation && shownFor == "") hide() }
+                    return@execute
+                }
+                if (found.text == replyShown && shownFor == "") return@execute      // same quote, already showing (no model call)
+            }
             val emojis = runCatching {
-                ranker.suggest(engine, text.takeLast(MAX_CHARS), reply)
+                if (text.isBlank()) ranker.suggest(engine, found!!.text, null)     // reacting to the picked message
+                else ranker.suggest(engine, clip(text), found?.text)
             }.onFailure { log { "suggest failed: $it" } }.getOrNull() ?: return@execute
-            log { "suggest ok in ${SystemClock.elapsedRealtime() - t0} ms (+${DEBOUNCE_MS} ms pause): ${emojis.joinToString("")} reply=${reply?.length} (${ReplyFinder.lastPick})" }
+            log { "suggest ok in ${SystemClock.elapsedRealtime() - t0} ms (+${DEBOUNCE_MS} ms pause): ${emojis.joinToString("")} len=${text.length} reply=${found?.text?.length} quoted=${found?.quoted} (${ReplyFinder.lastPick})" }
             main.post {
                 if (gen == generation) {
                     shownFor = text
+                    replyShown = if (text.isBlank()) found?.text else null
                     show(emojis)
                 }
             }
@@ -160,7 +195,10 @@ class EmojetService : AccessibilityService() {
         val view = strip ?: buildStrip().also { strip = it }
         val emojiRow = row ?: return
         emojiRow.removeAllViews()
-        for (emoji in emojis) {
+        current = emojis
+        val tone = Prefs.skinTone(this)
+        for (base in emojis) {
+            val emoji = toned(base, tone) ?: base
             emojiRow.addView(TextView(this).apply {
                 text = emoji
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 25f)
@@ -177,6 +215,12 @@ class EmojetService : AccessibilityService() {
                 setOnClickListener {
                     it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     insert(emoji)
+                }
+                // like a keyboard: hold a people emoji to pick a skin tone
+                if (toned(base, 1) != null) setOnLongClickListener {
+                    it.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    showTones(it, base)
+                    true
                 }
             })
         }
@@ -285,6 +329,15 @@ class EmojetService : AccessibilityService() {
         }
     }
 
+    /** Very long drafts: keep the start and the (more important) end, within what the model reads at once. */
+    private fun clip(text: String): String {
+        val t = text.trim()
+        if (t.length <= MAX_CHARS) return t
+        val head = t.take(MAX_CHARS / 4).substringBeforeLast(' ')
+        val tail = t.takeLast(MAX_CHARS - head.length - 3).substringAfter(' ')
+        return "$head … $tail"
+    }
+
     private fun words(text: String) = text.trim().split(Regex("\\s+")).count { it.isNotEmpty() }
 
     /** Insert at the cursor (or replace the selection), then put the cursor after the emoji. */
@@ -323,7 +376,72 @@ class EmojetService : AccessibilityService() {
         Toast.makeText(this, "EmoJet is off in $name. Turn it back on in the EmoJet app.", Toast.LENGTH_LONG).show()
     }
 
+    /** The emoji with a skin tone (1..5), or null if it has no toned form on this phone. Tone 0 = as is. */
+    private fun toned(emoji: String, tone: Int): String? {
+        if (tone == 0) return emoji
+        val first = emoji.offsetByCodePoints(0, 1)
+        var rest = emoji.substring(first)
+        if (rest.startsWith("\uFE0F")) rest = rest.substring(1)
+        val t = emoji.substring(0, first) + SKIN[tone] + rest
+        return t.takeIf { glyphs.hasGlyph(it) }
+    }
+
+    /** Row of the 6 tones above the held emoji; the pick is inserted and remembered. */
+    private fun showTones(anchor: View, base: String) {
+        dismissTones()
+        Theme.init(this)
+        val chosen = Prefs.skinTone(this)
+        val pop = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(6), dp(5), dp(6), dp(5))
+            background = Theme.dockGlass(this@EmojetService, 20)
+            elevation = dp(16).toFloat()
+        }
+        for (tone in 0..5) {
+            val variant = toned(base, tone) ?: continue
+            pop.addView(TextView(this).apply {
+                text = variant
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 27f)
+                setPadding(dp(7), dp(4), dp(7), dp(4))
+                background = if (tone == chosen) Theme.round(this@EmojetService, Theme.ACCENT and 0x00FFFFFF or 0x55000000, 14)
+                else Theme.ripple(null, Theme.round(this@EmojetService, if (Theme.dark) 0x22FFFFFF else 0x142B1C00, 14))
+                setOnClickListener {
+                    it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    Prefs.setSkinTone(this@EmojetService, tone)
+                    dismissTones()
+                    insert(variant)
+                    current?.let(::show)                          // the strip now shows the new tone
+                }
+            })
+        }
+        pop.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        val at = IntArray(2).also(anchor::getLocationOnScreen)
+        val lp = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            val w = resources.displayMetrics.widthPixels
+            x = (at[0] + anchor.width / 2 - pop.measuredWidth / 2).coerceIn(dp(8), maxOf(dp(8), w - pop.measuredWidth - dp(8)))
+            y = maxOf(0, at[1] - pop.measuredHeight - dp(10))
+        }
+        pop.setOnTouchListener { _, e -> if (e.actionMasked == MotionEvent.ACTION_OUTSIDE) dismissTones(); false }
+        wm.addView(pop, lp)
+        pop.alpha = 0f; pop.translationY = dp(6).toFloat()
+        pop.animate().alpha(1f).translationY(0f).setDuration(140).start()
+        tonePopup = pop
+    }
+
+    private fun dismissTones() {
+        tonePopup?.let { if (it.parent != null) wm.removeView(it) }
+        tonePopup = null
+    }
+
     private fun hide() {
+        dismissTones()
         pending?.let(main::removeCallbacks)
         generation++
         shownFor = null
@@ -370,9 +488,10 @@ class EmojetService : AccessibilityService() {
 
     companion object {
         private const val TAG = "EmoJet"
+        private val SKIN = arrayOf("", "\uD83C\uDFFB", "\uD83C\uDFFC", "\uD83C\uDFFD", "\uD83C\uDFFE", "\uD83C\uDFFF")
         private const val CHANNEL = "emojet_on"
         private const val NOTIFICATION_ID = 1
         private const val DEBOUNCE_MS = 250L
-        private const val MAX_CHARS = 280
+        private const val MAX_CHARS = 900
     }
 }

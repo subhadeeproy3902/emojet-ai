@@ -19,6 +19,10 @@ object Prefs {
     fun useReply(c: Context): Boolean = prefs(c).getBoolean("use_reply", true)
     fun setUseReply(c: Context, on: Boolean) = prefs(c).edit().putBoolean("use_reply", on).apply()
 
+    /** Skin tone for people emojis: 0 = default yellow, 1..5 = light .. dark (kept until the user picks another). */
+    fun skinTone(c: Context): Int = prefs(c).getInt("skin_tone", 0)
+    fun setSkinTone(c: Context, tone: Int) = prefs(c).edit().putInt("skin_tone", tone).apply()
+
     fun disabledApps(c: Context): Set<String> = prefs(c).getStringSet("disabled_apps", emptySet()) ?: emptySet()
     fun disableApp(c: Context, pkg: String) = prefs(c).edit().putStringSet("disabled_apps", disabledApps(c) + pkg).apply()
     fun enableApp(c: Context, pkg: String) = prefs(c).edit().putStringSet("disabled_apps", disabledApps(c) - pkg).apply()
