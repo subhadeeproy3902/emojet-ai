@@ -14,6 +14,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
@@ -112,7 +113,7 @@ class EmojetService : AccessibilityService() {
     private fun textOf(node: AccessibilityNodeInfo): String =
         if (node.isShowingHintText) "" else node.text?.toString() ?: ""
 
-    /** Debounce: ask Laya ~350 ms after typing pauses. Unchanged text is not asked again (dedup). */
+    /** Debounce: ask the model 250 ms after typing pauses. Unchanged text is not asked again (dedup). */
     private fun schedule(text: String) {
         pending?.let(main::removeCallbacks)
         if (text.isBlank()) {
@@ -130,6 +131,7 @@ class EmojetService : AccessibilityService() {
 
     private fun suggest(text: String) {
         val gen = ++generation
+        val t0 = SystemClock.elapsedRealtime()
         worker.execute {
             if (gen != generation) return@execute
             if (!engine.start()) { log { "engine not started" }; return@execute }
@@ -141,7 +143,7 @@ class EmojetService : AccessibilityService() {
             val emojis = runCatching {
                 ranker.suggest(engine, text.takeLast(MAX_CHARS), reply)
             }.onFailure { log { "suggest failed: $it" } }.getOrNull() ?: return@execute
-            log { "suggest ok: ${emojis.size} emojis, reply=${reply?.length} (${ReplyFinder.lastPick})" }
+            log { "suggest ok in ${SystemClock.elapsedRealtime() - t0} ms (+${DEBOUNCE_MS} ms pause): ${emojis.joinToString("")} reply=${reply?.length} (${ReplyFinder.lastPick})" }
             main.post {
                 if (gen == generation) {
                     shownFor = text
