@@ -161,11 +161,13 @@ class EmojetService : AccessibilityService() {
         worker.execute {
             if (gen != generation) return@execute
             if (!engine.start()) { log { "engine not started" }; return@execute }
+            val tStart = SystemClock.elapsedRealtime()
             val ownScreen = target?.packageName?.toString() == packageName     // EmoJet's own "Try it" box has no conversation
             val found = if (Prefs.useReply(this) && !ownScreen) runCatching {
                 target?.let { ReplyFinder.find(rootInActiveWindow, it, text, resources.displayMetrics.heightPixels, resources.displayMetrics.widthPixels) }
             }.getOrNull() else null
             if (gen != generation) return@execute
+            val tFound = SystemClock.elapsedRealtime()
             if (text.isBlank()) {
                 if (found?.quoted != true) {                                        // empty box, no reply picked: no strip
                     main.post { if (gen == generation && shownFor == "") hide() }
@@ -177,7 +179,7 @@ class EmojetService : AccessibilityService() {
                 if (text.isBlank()) ranker.suggest(engine, found!!.text, null)     // reacting to the picked message
                 else ranker.suggest(engine, clip(text), found?.text)
             }.onFailure { log { "suggest failed: $it" } }.getOrNull() ?: return@execute
-            log { "suggest ok in ${SystemClock.elapsedRealtime() - t0} ms (+${DEBOUNCE_MS} ms pause): ${emojis.joinToString("")} len=${text.length} reply=${found?.text?.length} quoted=${found?.quoted} (${ReplyFinder.lastPick})" }
+            log { "suggest ok in ${SystemClock.elapsedRealtime() - t0} ms (reply search ${tFound - tStart} ms, model ${SystemClock.elapsedRealtime() - tFound} ms, +${DEBOUNCE_MS} ms pause): ${emojis.joinToString("")} len=${text.length} reply=${found?.text?.length} quoted=${found?.quoted} (${ReplyFinder.lastPick})" }
             main.post {
                 if (gen == generation) {
                     shownFor = text

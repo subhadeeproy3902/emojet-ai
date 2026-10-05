@@ -10,6 +10,7 @@ Start every session by reading `docs/PLAN.md` (phases, status, decisions) and `d
 - **Laya only** as AI at runtime. **$0**: no paid services, no Play Store, no Chrome Web Store. Distribution = GitHub Releases (APK, extension zip, model).
 - Suggestions come from the **whole sentence** (+ replied-to message), never single keywords. Never stop suggesting because an emoji was just typed.
 - Target all Unicode emojis (`shared/emoji-catalog.json`) and tone of voice (`shared/tones.json`) via the fine-tuned **Emojet-v1** model (the model repo's `docs/TRAINING.md`).
+- **Model release plan** (model repo `docs/RELEASE.md`): public name **Emojet**, https://huggingface.co/subhadeeproy3902/emojet; the real-data model (internal "v2", 65 tones / 8 styles / 6 axes, label file `tones.json` v2) ships as public **v1**. When it ships, `shared/models.json` points at the pinned Hugging Face file and `shared/tones.json` is replaced by v2 (label order must match the model). Nothing is published yet.
 - Updates happen **inside** the app/extension, never uninstall + reinstall (`docs/WORKFLOWS.md` §4).
 - Any Android 8+ phone; owner tests on a Redmi Note 17 Pro (HyperOS: "Install via USB" needed for adb installs).
 - sudo needs the owner's password: show the exact command, the owner runs it with `!`.
