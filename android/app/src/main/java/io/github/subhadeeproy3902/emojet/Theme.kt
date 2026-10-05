@@ -22,19 +22,32 @@ import android.widget.TextView
  * for progress. Type: Syne (headings) + DM Sans (text). Spacing on an 8 dp grid.
  */
 object Theme {
-    // colour tokens (sampled from assets/brand/splash.png)
-    const val NIGHT = 0xFF040429.toInt()        // background
-    const val SURFACE = 0xFF0F0E3F.toInt()      // cards
-    const val SURFACE2 = 0xFF17165A.toInt()     // inputs, chips
-    const val LINE = 0xFF24236A.toInt()         // hairlines
-    const val INK = 0xFFF5F3FF.toInt()          // primary text
-    const val INK2 = 0xFFB8B5E0.toInt()         // secondary text
-    const val INK3 = 0xFF7C79AE.toInt()         // hints, captions
-    const val ACCENT = 0xFFFABE3C.toInt()       // the emoji's yellow
-    const val ON_ACCENT = 0xFF1A1033.toInt()    // text on yellow
-    const val MAGENTA = 0xFFD32ACF.toInt()
-    const val VIOLET = 0xFF6A2CF0.toInt()
-    const val OK = 0xFF34D399.toInt()
+    // colour tokens: yellow brand, warm neutrals; light/dark follow the phone (refresh() on every screen/strip build)
+    var dark = false; private set
+    var NIGHT = 0; private set          // page background
+    var SURFACE = 0; private set        // cards
+    var SURFACE2 = 0; private set       // inputs, chips
+    var LINE = 0; private set           // hairlines
+    var INK = 0; private set            // primary text
+    var INK2 = 0; private set           // secondary text
+    var INK3 = 0; private set           // hints, captions
+    var OK = 0; private set
+    var GLOW = 0; private set           // warm glow at the bottom of the page (from the splash)
+    const val ACCENT = 0xFFFFC52E.toInt()       // the brand yellow
+    const val ON_ACCENT = 0xFF2B1C00.toInt()
+    const val ORANGE = 0xFFFF8A1F.toInt()
+
+    fun refresh(c: Context) {
+        dark = (c.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        if (dark) {
+            NIGHT = 0xFF120F0A.toInt(); SURFACE = 0xFF1C1812.toInt(); SURFACE2 = 0xFF262017.toInt(); LINE = 0xFF342C1F.toInt()
+            INK = 0xFFFFF7E8.toInt(); INK2 = 0xFFCFC2A5.toInt(); INK3 = 0xFF8C806A.toInt(); OK = 0xFF3DDC97.toInt(); GLOW = 0x4DFF8A1F
+        } else {
+            NIGHT = 0xFFFFF8E8.toInt(); SURFACE = 0xFFFFFFFF.toInt(); SURFACE2 = 0xFFFFF3D9.toInt(); LINE = 0xFFF1E4C6.toInt()
+            INK = 0xFF1E1608.toInt(); INK2 = 0xFF6F604A.toInt(); INK3 = 0xFFA9997B.toInt(); OK = 0xFF1FA463.toInt(); GLOW = 0x33FF9A3C
+        }
+    }
 
     const val R_CARD = 22
     const val R_INPUT = 16
@@ -47,6 +60,7 @@ object Theme {
     lateinit var semibold: Typeface; private set
 
     fun init(c: Context) {
+        refresh(c)
         if (::display.isInitialized) return
         // With the system font as fallback (Android 10+), so symbols the font lacks (✕, ⋮, →) still render.
         fun font(file: String, axes: String): Typeface = runCatching {
@@ -75,13 +89,13 @@ object Theme {
         stroke?.let { setStroke(dp(c, 1), it) }
     }
 
-    /** Night with a soft violet/magenta glow behind the top of the page, like the light behind the splash emoji. */
+    /** Page background with the splash's warm glow rising from the bottom. */
     fun background(c: Context): Drawable {
         val glow = GradientDrawable().apply {
             gradientType = GradientDrawable.RADIAL_GRADIENT
-            colors = intArrayOf(0x553A1FC8, 0x22D32ACF, 0x00040429)
-            gradientRadius = dp(c, 420).toFloat()
-            setGradientCenter(0.85f, 0.0f)
+            colors = intArrayOf(GLOW, GLOW and 0x00FFFFFF or 0x10000000, NIGHT and 0x00FFFFFF)
+            gradientRadius = dp(c, 460).toFloat()
+            setGradientCenter(0.5f, 1.05f)
         }
         return LayerDrawable(arrayOf(GradientDrawable().apply { setColor(NIGHT) }, glow))
     }
@@ -89,9 +103,9 @@ object Theme {
     /** The emoji's glossy yellow: gradient, gentle top highlight, slightly deeper edge. */
     fun gloss(c: Context, radiusDp: Number): Drawable {
         val r = dp(c, radiusDp).toFloat()
-        val base = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFFFFD877.toInt(), ACCENT, 0xFFF0A21E.toInt())).apply {
+        val base = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFFFFDC6E.toInt(), ACCENT, 0xFFF4A51C.toInt())).apply {
             cornerRadius = r
-            setStroke(dp(c, 1), 0xFFD98B12.toInt())
+            setStroke(dp(c, 1), 0xFFD98E0F.toInt())
         }
         // full-size highlight that fades out by the middle: follows the pill's curve exactly
         val shine = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x55FFFFFF, 0x00FFFFFF, 0x00FFFFFF)).apply { cornerRadius = r }
@@ -104,7 +118,7 @@ object Theme {
     /** Progress bar in the splash's neon trail colours. */
     fun trailProgress(c: Context): Drawable {
         val track = round(c, SURFACE2, 4)
-        val fill = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(ACCENT, MAGENTA, VIOLET)).apply {
+        val fill = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(ACCENT, ORANGE)).apply {
             cornerRadius = dp(c, 4).toFloat()
         }
         return LayerDrawable(arrayOf(track, ClipDrawable(fill, Gravity.START, ClipDrawable.HORIZONTAL))).apply {
@@ -113,7 +127,8 @@ object Theme {
         }
     }
 
-    fun ripple(content: Drawable?, mask: Drawable? = null) = RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), content, mask)
+    fun ripple(content: Drawable?, mask: Drawable? = null) =
+        RippleDrawable(ColorStateList.valueOf(if (dark) 0x33FFFFFF else 0x1F2B1C00), content, mask)
 
     fun card(c: Context) = LinearLayout(c).apply {
         orientation = LinearLayout.VERTICAL
@@ -173,7 +188,8 @@ object Theme {
     fun switch(c: Context, on: Boolean, onChange: (Boolean) -> Unit) = Switch(c).apply {
         isChecked = on
         thumbTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(ACCENT, INK3))
-        trackTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(0xFF7A5A1A.toInt(), LINE))
+        trackTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(if (dark) 0xFF7A5A1A.toInt() else 0xFFFFE39A.toInt(), LINE))
         setOnCheckedChangeListener { _, v -> onChange(v) }
     }
 
@@ -219,17 +235,23 @@ object Theme {
         layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(c, 1))
     }
 
-    /** macOS-dock style glass for the emoji strip: smoky dark, soft light edge, top sheen. Neutral over any app. */
+    /** macOS-dock glass for the emoji strip, following the phone's mode, with a warm yellow touch at the bottom. */
     fun dockGlass(c: Context, radiusDp: Number): Drawable {
         val r = dp(c, radiusDp).toFloat()
-        val body = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xEB3A3A44.toInt(), 0xEB24242C.toInt(), 0xEB18181E.toInt())).apply {
+        val colors = if (dark) intArrayOf(0xEB3A3A40.toInt(), 0xEB27252A.toInt(), 0xEB4A3814.toInt())
+                     else intArrayOf(0xF2FFFFFF.toInt(), 0xEEF7F6F4.toInt(), 0xEEFFE6A0.toInt())
+        val body = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, colors).apply {
             cornerRadius = r
-            setStroke(dp(c, 1), 0x33FFFFFF)
+            setStroke(dp(c, 1), if (dark) 0x33FFFFFF else 0x1A2B1C00)
         }
-        val sheen = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x24FFFFFF, 0x00FFFFFF, 0x00FFFFFF)).apply { cornerRadius = r }
+        val sheen = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+            intArrayOf(if (dark) 0x24FFFFFF else 0x80FFFFFF.toInt(), 0x00FFFFFF, 0x00FFFFFF)).apply { cornerRadius = r }
         return LayerDrawable(arrayOf(body, sheen)).apply {
             val i = dp(c, 1)
             setLayerInset(1, i, i, i, i)
         }
     }
+
+    /** Colour of the strip's handle and close icon. */
+    fun dockControl(): Int = if (dark) 0x8CFFFFFF.toInt() else 0x732B1C00
 }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Yellow brand; light/dark follow the phone. -->
+    <style name="Theme.EmoJet" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/page</item>
+        <item name="android:statusBarColor">@color/page</item>
+        <item name="android:navigationBarColor">@color/page</item>
+        <item name="android:colorAccent">@color/sun</item>
+    </style>
+</resources>

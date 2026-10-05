@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark theme matching the splash (midnight indigo). -->
-    <style name="Theme.EmoJet" parent="@android:style/Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/night</item>
-        <item name="android:statusBarColor">@color/night</item>
-        <item name="android:navigationBarColor">@color/night</item>
+    <!-- Yellow brand; light/dark follow the phone. -->
+    <style name="Theme.EmoJet" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/page</item>
+        <item name="android:statusBarColor">@color/page</item>
+        <item name="android:navigationBarColor">@color/page</item>
         <item name="android:colorAccent">@color/sun</item>
-        <item name="android:textColorHint">#7C79AE</item>
     </style>
 </resources>

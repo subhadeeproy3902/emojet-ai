@@ -42,10 +42,14 @@ class Engine private constructor(private val app: Context) {
         ).redirectErrorStream(true).redirectOutput(File(app.cacheDir, "engine.log")).start()
 
         val deadline = System.currentTimeMillis() + 30_000
-        while (System.currentTimeMillis() < deadline) {
-            if (process?.isAlive != true) return false
-            if (healthy()) return true
-            Thread.sleep(200)
+        try {
+            while (System.currentTimeMillis() < deadline) {
+                if (process?.isAlive != true) return false
+                if (healthy()) return true
+                Thread.sleep(200)
+            }
+        } catch (e: InterruptedException) {          // service shutting down
+            Thread.currentThread().interrupt()
         }
         return false
     }

@@ -47,7 +47,7 @@ class EmojetService : AccessibilityService() {
     private var target: AccessibilityNodeInfo? = null
     private var pending: Runnable? = null
     private var shownFor: String? = null
-    private var dismissedWords = -1
+    private var dismissedText: String? = null
     private var row: LinearLayout? = null
     @Volatile private var generation = 0
 
@@ -57,7 +57,7 @@ class EmojetService : AccessibilityService() {
         engine = Engine.get(this)
         ranker = Ranker(this)
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
-        worker.execute { engine.start() }
+        worker.execute { runCatching { engine.start() } }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
@@ -120,8 +120,11 @@ class EmojetService : AccessibilityService() {
             return
         }
         if (text == shownFor && strip?.parent != null) return
-        if (dismissedWords >= 0 && words(text) <= dismissedWords) return     // closed with ✕: wait for a new word
-        dismissedWords = -1
+        // closed with ✕: stay hidden only for that same message until a new word is added
+        dismissedText?.let { d ->
+            if (text.startsWith(d.trimEnd()) && words(text) <= words(d)) return
+            dismissedText = null
+        }
         pending = Runnable { suggest(text) }.also { main.postDelayed(it, DEBOUNCE_MS) }
     }
 
@@ -160,7 +163,7 @@ class EmojetService : AccessibilityService() {
                 text = emoji
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 25f)
                 setPadding(dp(7), dp(4), dp(7), dp(4))
-                background = Theme.ripple(null, Theme.round(this@EmojetService, 0x22FFFFFF, 14))
+                background = Theme.ripple(null, Theme.round(this@EmojetService, if (Theme.dark) 0x22FFFFFF else 0x142B1C00, 14))
                 // dock-style magnification while the finger is on it
                 setOnTouchListener { v, e ->
                     when (e.actionMasked) {
@@ -198,8 +201,9 @@ class EmojetService : AccessibilityService() {
         }
     }
 
-    /** Glossy yellow pill: ⠿ grip (drag to move, long-press = off in this app) · emojis · ✕ close. */
+    /** Dock-style glass pill: ⠿ grip (drag to move, long-press = off in this app) · emojis · ✕ close. */
     private fun buildStrip(): LinearLayout {
+        Theme.init(this)                                   // pick up the phone's current light/dark mode
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -211,7 +215,7 @@ class EmojetService : AccessibilityService() {
         }
         val grip = TextView(this).apply {
             text = "⠿"
-            setTextColor(0x8CFFFFFF.toInt())
+            setTextColor(Theme.dockControl())
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
             setPadding(dp(10), dp(4), dp(4), dp(4))
             contentDescription = "Move the emoji strip"
@@ -222,12 +226,12 @@ class EmojetService : AccessibilityService() {
         bar.addView(row)
         bar.addView(android.widget.ImageView(this).apply {
             setImageResource(R.drawable.ic_close)
-            imageAlpha = 150
+            setColorFilter(Theme.dockControl())
             setPadding(dp(8), dp(8), dp(12), dp(8))
             contentDescription = "Close until you type a new word"
-            background = Theme.ripple(null, Theme.round(this@EmojetService, 0x22FFFFFF, 14))
+            background = Theme.ripple(null, Theme.round(this@EmojetService, if (Theme.dark) 0x22FFFFFF else 0x142B1C00, 14))
             setOnClickListener {
-                dismissedWords = words(target?.let(::textOf).orEmpty())
+                dismissedText = target?.let(::textOf).orEmpty()
                 hide()
             }
         }, LinearLayout.LayoutParams(dp(36), dp(36)))
@@ -366,7 +370,7 @@ class EmojetService : AccessibilityService() {
         private const val TAG = "EmoJet"
         private const val CHANNEL = "emojet_on"
         private const val NOTIFICATION_ID = 1
-        private const val DEBOUNCE_MS = 350L
+        private const val DEBOUNCE_MS = 250L
         private const val MAX_CHARS = 280
     }
 }

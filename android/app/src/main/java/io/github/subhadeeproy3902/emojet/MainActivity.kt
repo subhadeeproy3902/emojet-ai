@@ -136,23 +136,39 @@ class MainActivity : Activity() {
         val root = FrameLayout(this).apply { addView(page) }
         if (savedInstanceState == null) root.addView(splash())
         setContentView(root)
+        // after setContentView: the window decoration exists now. Dark icons on light theme, light icons on dark.
+        if (Build.VERSION.SDK_INT >= 30) {
+            val light = android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+            window.insetsController?.setSystemBarsAppearance(if (Theme.dark) 0 else light, light)
+        } else if (!Theme.dark) {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        }
     }
 
-    /** Cold-start splash: the brand artwork full-bleed, wordmark at the bottom, then a soft fade into the app. */
+    /**
+     * Cold-start splash: the transparent artwork on the theme's background (light or dark), scaled to the
+     * screen width and sitting on the bottom so its warm glow meets the edge (never cropped sideways);
+     * logo centred above the wordmark. Held ~1.2 s from the first drawn frame, then a soft fade.
+     */
     private fun splash() = FrameLayout(this).apply {
-        setBackgroundColor(Theme.NIGHT)
+        background = Theme.background(context)
         isClickable = true
         addView(ImageView(context).apply {
-            setImageResource(R.drawable.splash)
-            scaleType = ImageView.ScaleType.CENTER_CROP
+            setImageResource(R.drawable.splash_art)
+            adjustViewBounds = true
+            scaleType = ImageView.ScaleType.FIT_END
         }, FrameLayout.LayoutParams(-1, -1))
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            addView(Theme.displayText(context, "EmoJet").apply { gravity = Gravity.CENTER })
-            addView(Theme.secondaryText(context, "The right emoji, every time.").apply { gravity = Gravity.CENTER }, lp(top = 8))
-        }, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { bottomMargin = dp(context, 72) })
-        // start the clock on the first frame actually drawn, so slow phones still see the full artwork
+            addView(ImageView(context).apply {
+                setImageResource(R.mipmap.ic_launcher)
+                elevation = dp(context, 6).toFloat()
+            }, LinearLayout.LayoutParams(dp(context, 76), dp(context, 76)))
+            addView(Theme.displayText(context, "EmoJet").apply { gravity = Gravity.CENTER }, lp(top = 16))
+            addView(Theme.secondaryText(context, "The right emoji, every time.").apply { gravity = Gravity.CENTER }, lp(top = 6))
+        }, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { bottomMargin = dp(context, 96) })
         val splashView = this
         viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
