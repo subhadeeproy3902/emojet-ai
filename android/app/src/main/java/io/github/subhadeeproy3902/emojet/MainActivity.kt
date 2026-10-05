@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -24,11 +23,10 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
-import android.widget.Switch
 import android.widget.TextView
 import io.github.subhadeeproy3902.emojet.Theme.dp
 
-/** Home screen: hero, setup checklist, controls, updates, privacy. Plain views + Theme (small APK). */
+/** Home: top bar, title, setup steps (until done), try it, preferences, updates, privacy, advanced. */
 class MainActivity : Activity() {
 
     private val main = Handler(Looper.getMainLooper())
@@ -36,20 +34,26 @@ class MainActivity : Activity() {
     private lateinit var updates: UpdateManager
     private var lastInfo: UpdateManager.Info? = null
 
-    private lateinit var heroStatus: TextView
-    private lateinit var stepModel: Step
-    private lateinit var stepA11y: Step
-    private lateinit var stepAwake: Step
+    private lateinit var chip: TextView
+    private lateinit var title: TextView
+    private lateinit var subtitle: TextView
+    private lateinit var setupCard: LinearLayout
+    private lateinit var step1: Step
+    private lateinit var step2: Step
+    private lateinit var step3: Step
     private lateinit var progress: ProgressBar
-    private lateinit var mobileNow: Button
-    private lateinit var cancelDl: Button
-    private lateinit var downloadBtn: Button
-    private lateinit var importBtn: Button
+    private lateinit var progressText: TextView
+    private lateinit var retryBtn: Button
+    private lateinit var mobileBtn: Button
     private lateinit var upgradeBtn: Button
-    private lateinit var pauseBtn: Button
-    private lateinit var disabledBox: LinearLayout
-    private lateinit var updateStatus: TextView
+    private lateinit var pauseSub: TextView
+    private lateinit var pauseAction: TextView
+    private lateinit var offAppsBox: LinearLayout
+    private lateinit var updateSub: TextView
     private lateinit var installBtn: Button
+    private lateinit var advancedBox: LinearLayout
+    private lateinit var advancedChevron: TextView
+    private lateinit var modelInfo: TextView
     private lateinit var testResult: TextView
 
     private val ticker = object : Runnable {
@@ -59,64 +63,64 @@ class MainActivity : Activity() {
         }
     }
 
-    /** One row of the setup checklist: badge (number or ✓) + title + detail + its own actions. */
-    private inner class Step(private val n: Int, title: String) {
-        val badge = Theme.text(this@MainActivity, "$n", 15f, Theme.INK, Theme.BOLD).apply {
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(dp(context, 30), dp(context, 30))
-            background = Theme.gloss(context, 15)
-        }
-        val title = Theme.text(this@MainActivity, title, 17f, Theme.INK, Theme.BOLD)
-        val detail = Theme.text(this@MainActivity, "", 14f, Theme.INK_SOFT)
+    /** A setup step: badge · title · detail · actions (actions only while it's the current step). */
+    private inner class Step(val n: Int, titleText: String) {
+        val badge = TextView(this@MainActivity).apply { layoutParams = LinearLayout.LayoutParams(dp(context, 28), dp(context, 28)) }
+        val title = Theme.label(this@MainActivity, titleText)
+        val detail = Theme.secondaryText(this@MainActivity, "")
         val actions = LinearLayout(this@MainActivity).apply { orientation = LinearLayout.VERTICAL }
         val view = LinearLayout(this@MainActivity).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(context, 10), 0, dp(context, 10))
+            setPadding(0, dp(context, 14), 0, dp(context, 14))
             addView(badge)
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(dp(context, 12), 0, 0, 0)
+                setPadding(dp(context, 14), dp(context, 4), 0, 0)
                 addView(this@Step.title)
-                addView(detail)
+                addView(detail, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(context, 4) })
                 addView(actions)
             }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
 
-        fun set(done: Boolean, text: String) {
-            badge.text = if (done) "✓" else "$n"
-            badge.setTextColor(if (done) 0xFFFFFFFF.toInt() else Theme.INK)
-            badge.background = if (done) GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Theme.OK) }
-                               else Theme.gloss(this@MainActivity, 15)
+        fun set(state: Int, text: String) {
+            Theme.stepBadge(this@MainActivity, badge, n, state)
+            title.setTextColor(if (state == Theme.STEP_LATER) Theme.INK3 else Theme.INK)
             detail.text = text
-            actions.visibility = if (done) View.GONE else View.VISIBLE
+            detail.visibility = if (text.isEmpty()) View.GONE else View.VISIBLE
+            actions.visibility = if (state == Theme.STEP_NOW) View.VISIBLE else View.GONE
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Theme.init(this)
         models = ModelManager(this)
         updates = UpdateManager(this)
         @Suppress("DEPRECATION")
-        window.statusBarColor = Theme.CREAM
+        window.statusBarColor = Theme.PAPER
         @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
 
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(this@MainActivity, 16), dp(this@MainActivity, 8), dp(this@MainActivity, 16), dp(this@MainActivity, 32))
+            setPadding(dp(context, 20), dp(context, 12), dp(context, 20), dp(context, 40))
         }
-        col.addView(hero())
-        col.addView(setupCard(), gap())
-        col.addView(controlsCard(), gap())
-        col.addView(updatesCard(), gap())
-        col.addView(privacyCard(), gap())
-        col.addView(Theme.text(this, "EmoJet ${packageManager.getPackageInfo(packageName, 0).versionName} · powered by Laya · free & open source",
-            12f, Theme.INK_SOFT).apply { gravity = Gravity.CENTER; setPadding(0, dp(context, 18), 0, 0) })
+        col.addView(topBar())
+        title = Theme.displayText(this, "").also { col.addView(it, lp(top = 32)) }
+        subtitle = Theme.bodyText(this, "", Theme.INK2).also { col.addView(it, lp(top = 8)) }
+        col.addView(buildSetup().also { setupCard = it }, lp(top = 24))
+        col.addView(tryCard(), lp(top = 16))
+        col.addView(preferencesCard(), lp(top = 16))
+        col.addView(updatesCard(), lp(top = 16))
+        col.addView(privacyCard(), lp(top = 16))
+        col.addView(advancedCard(), lp(top = 16))
+        col.addView(Theme.caption(this, "EmoJet ${versionName()} · free and open source").apply { gravity = Gravity.CENTER }, lp(top = 28))
 
         setContentView(ScrollView(this).apply {
-            background = Theme.background()
+            setBackgroundColor(Theme.PAPER)
+            isVerticalScrollBarEnabled = false
             addView(col)
-            setOnApplyWindowInsetsListener { v, insets ->         // edge-to-edge (Android 15+): keep clear of the bars
+            setOnApplyWindowInsetsListener { v, insets ->
                 @Suppress("DEPRECATION")
                 v.setPadding(0, insets.systemWindowInsetTop, 0, insets.systemWindowInsetBottom)
                 insets
@@ -124,124 +128,140 @@ class MainActivity : Activity() {
         })
     }
 
-    // ---------- sections
+    // ---------------- sections
 
-    private fun hero() = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER_HORIZONTAL
-        background = Theme.gloss(this@MainActivity, 32)
-        elevation = dp(context, 6).toFloat()
-        setPadding(dp(context, 20), dp(context, 22), dp(context, 20), dp(context, 22))
+    private fun topBar() = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
         addView(ImageView(context).apply {
             setImageResource(R.mipmap.ic_launcher)
-            layoutParams = LinearLayout.LayoutParams(dp(context, 88), dp(context, 88))
-            elevation = dp(context, 4).toFloat()
+            layoutParams = LinearLayout.LayoutParams(dp(context, 36), dp(context, 36))
         })
-        addView(Theme.text(context, "EmoJet", 36f, Theme.INK, Theme.BOLD).apply { setPadding(0, dp(context, 6), 0, 0) })
-        addView(Theme.text(context, "The right emoji for your whole message.\nOn your phone. Free. Private.", 15f, Theme.INK).apply {
-            gravity = Gravity.CENTER
-        })
-        heroStatus = Theme.pill(context, "", 0xFFFFFFFF.toInt(), Theme.INK)
-        addView(heroStatus, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            topMargin = dp(context, 12)
-        })
+        addView(Theme.h1(context, "EmoJet").apply { setPadding(dp(context, 10), 0, 0, 0) },
+            LinearLayout.LayoutParams(0, -2, 1f))
+        chip = Theme.chip(context)
+        addView(chip)
     }
 
-    private fun setupCard() = Theme.card(LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        addView(Theme.text(context, "Set up", 22f, Theme.INK, Theme.BOLD))
-
-        stepModel = Step(1, "Laya model")
+    private fun buildSetup() = Theme.card(this).apply {
+        setPadding(dp(context, 20), dp(context, 6), dp(context, 20), dp(context, 6))
+        step1 = Step(1, "Getting ready")
         progress = ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 1000
-            progressTintList = ColorStateList.valueOf(Theme.SUN_DEEP)
-            progressBackgroundTintList = ColorStateList.valueOf(0xFFF1E7C8.toInt())
+            progressTintList = ColorStateList.valueOf(Theme.ACCENT_DEEP)
+            progressBackgroundTintList = ColorStateList.valueOf(Theme.LINE)
         }
-        stepModel.actions.addView(progress, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 14)).apply { topMargin = dp(context, 6) })
-        downloadBtn = Theme.primary(context, "Download the model") { models.startDownload(false); refresh() }
-        mobileNow = Theme.secondary(context, "Use mobile data now") { models.allowMobileDataNow(); refresh() }
-        cancelDl = Theme.secondary(context, "Cancel download") { models.cancel(); refresh() }
-        importBtn = Theme.secondary(context, "Import a model file (.gguf)") {
-            startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), PICK_MODEL)
-        }
-        for (b in listOf(downloadBtn, mobileNow, cancelDl, importBtn)) stepModel.actions.addView(b, actionLp())
-        addView(stepModel.view)
-        upgradeBtn = Theme.primary(context, "Get the newer model") { models.startDownload(false); refresh() }
-        addView(upgradeBtn, actionLp())
+        step1.actions.addView(progress, LinearLayout.LayoutParams(-1, dp(context, 6)).apply { topMargin = dp(context, 12) })
+        progressText = Theme.caption(context, "").also { step1.actions.addView(it, lp(top = 6)) }
+        retryBtn = Theme.primaryButton(context, "Try again") { models.startDownload(false); refresh() }
+        mobileBtn = Theme.secondaryButton(context, "Use mobile data instead") { models.allowMobileDataNow(); refresh() }
+        step1.actions.addView(retryBtn, lp(top = 12))
+        step1.actions.addView(mobileBtn, lp(top = 12))
+        addView(step1.view)
+        addView(Theme.hairline(context))
 
-        stepA11y = Step(2, "Turn on EmoJet")
-        stepA11y.actions.addView(Theme.primary(context, "Open Accessibility → EmoJet") {
+        step2 = Step(2, "Turn on EmoJet")
+        step2.actions.addView(Theme.primaryButton(context, "Open Accessibility") {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }, actionLp())
-        stepA11y.actions.addView(Theme.text(context, "Greyed out? App info → ⋮ (top right) → Allow restricted settings, then try again.", 13f, Theme.INK_SOFT))
-        stepA11y.actions.addView(Theme.secondary(context, "App info") { openAppInfo() }, actionLp())
-        addView(stepA11y.view)
+        }, lp(top = 14))
+        step2.actions.addView(Theme.caption(context, "Find EmoJet under Downloaded apps. Greyed out? Open App info, tap ⋮ in the corner, then Allow restricted settings."), lp(top = 10))
+        step2.actions.addView(Theme.secondaryButton(context, "App info") { openAppInfo() }, lp(top = 10))
+        addView(step2.view)
+        addView(Theme.hairline(context))
 
-        stepAwake = Step(3, "Keep it running")
-        stepAwake.actions.addView(Theme.primary(context, "Allow in the background") { askKeepRunning() }, actionLp())
+        step3 = Step(3, "Keep it running")
+        step3.actions.addView(Theme.primaryButton(context, "Allow") { askKeepRunning() }, lp(top = 14))
         if (isXiaomi()) {
-            stepAwake.actions.addView(Theme.text(context, "Xiaomi / Redmi / POCO: App info → Battery → No restrictions, and turn Autostart on.", 13f, Theme.INK_SOFT))
-            stepAwake.actions.addView(Theme.secondary(context, "App info") { openAppInfo() }, actionLp())
+            step3.actions.addView(Theme.caption(context, "On Xiaomi, Redmi and POCO also set App info → Battery → No restrictions, and turn on Autostart."), lp(top = 10))
+            step3.actions.addView(Theme.secondaryButton(context, "App info") { openAppInfo() }, lp(top = 10))
         }
-        addView(stepAwake.view)
+        addView(step3.view)
+    }
 
-        val tryStep = Step(4, "Try it")
-        tryStep.detail.text = "Type a message, pause, tap an emoji. Works in WhatsApp, Instagram, any app."
-        tryStep.actions.addView(EditText(context).apply {
-            hint = "e.g. bhai aaj party karte hain"
-            minLines = 2
+    private fun tryCard() = Theme.card(this).apply {
+        addView(Theme.h2(context, "Try it"))
+        addView(Theme.secondaryText(context, "Type something, pause, then tap an emoji."), lp(top = 4))
+        addView(EditText(context).apply {
+            hint = "bhai aaj party karte hain"
+            typeface = Theme.body
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
             setTextColor(Theme.INK)
-            setHintTextColor(0x886B6250.toInt())
-            background = Theme.round(context, Theme.CREAM, 16, Theme.SUN_EDGE)
-            setPadding(dp(context, 12), dp(context, 10), dp(context, 12), dp(context, 10))
-        }, actionLp())
-        testResult = Theme.text(context, "", 14f, Theme.INK)
-        tryStep.actions.addView(testResult)
-        tryStep.actions.addView(Theme.secondary(context, "Run engine self-test") { selfTest() }, actionLp())
-        addView(tryStep.view)
-    })
+            setHintTextColor(Theme.INK3)
+            minLines = 2
+            gravity = Gravity.TOP
+            background = Theme.round(context, Theme.PAPER, Theme.R_INPUT, Theme.LINE)
+            setPadding(dp(context, 14), dp(context, 12), dp(context, 14), dp(context, 12))
+        }, lp(top = 14))
+        upgradeBtn = Theme.primaryButton(context, "Get the improved model") { models.startDownload(false); refresh() }.apply { visibility = View.GONE }
+        addView(upgradeBtn, lp(top = 14))
+    }
 
-    private fun controlsCard() = Theme.card(LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        addView(Theme.text(context, "Controls", 22f, Theme.INK, Theme.BOLD))
-        addView(switch("Suggestions on", Prefs.enabled(context)) { Prefs.setEnabled(context, it) })
-        addView(switch("Understand the message I'm replying to", Prefs.useReply(context)) { Prefs.setUseReply(context, it) })
-        pauseBtn = Theme.secondary(context, "") {
-            if (System.currentTimeMillis() < Prefs.pausedUntil(context)) Prefs.resume(context) else Prefs.pauseFor(context, 3_600_000)
+    private fun preferencesCard() = Theme.card(this).apply {
+        setPadding(dp(context, 20), dp(context, 16), dp(context, 20), dp(context, 8))
+        addView(Theme.h2(context, "Preferences"))
+        addView(row("Suggestions", "Show emojis while you type", Theme.switch(context, Prefs.enabled(context)) { Prefs.setEnabled(context, it) }), lp(top = 4))
+        addView(Theme.hairline(context))
+        addView(row("Understand replies", "Use the message you're replying to", Theme.switch(context, Prefs.useReply(context)) { Prefs.setUseReply(context, it) }))
+        addView(Theme.hairline(context))
+        pauseSub = Theme.secondaryText(context, "")
+        pauseAction = action("Pause") {
+            if (paused()) Prefs.resume(context) else Prefs.pauseFor(context, 3_600_000)
             refresh()
         }
-        addView(pauseBtn, actionLp())
-        addView(Theme.secondary(context, "Reset the strip position") {
+        addView(row("Pause for an hour", pauseSub, pauseAction))
+        addView(Theme.hairline(context))
+        addView(row("Strip position", "Back to just above the text box", action("Reset") {
             Prefs.resetStripOffsets(context)
-            testResult.text = "Strip position reset in every app."
-        }, actionLp())
-        addView(Theme.text(context, "On the strip: drag ⠿ to move it (remembered per app) · ✕ hides it until your next word · long-press ⠿ turns EmoJet off in that app. Add the EmoJet tile to Quick Settings for one-tap on/off.",
-            13f, Theme.INK_SOFT).apply { setPadding(0, dp(context, 8), 0, 0) })
-        disabledBox = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
-        addView(disabledBox)
-    })
+            testResult.text = "Strip position reset."
+        }))
+        offAppsBox = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+        addView(offAppsBox)
+        addView(Theme.caption(context, "On the strip: drag ⠿ to move it · ✕ hides it until your next word · hold ⠿ to turn EmoJet off in that app."), lp(top = 8, bottom = 8))
+    }
 
-    private fun updatesCard() = Theme.card(LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        addView(Theme.text(context, "Updates", 22f, Theme.INK, Theme.BOLD))
-        updateStatus = Theme.text(context, "Checks happen only when you tap the button.", 14f, Theme.INK_SOFT)
-        addView(updateStatus)
-        addView(Theme.secondary(context, "Check for updates") { checkUpdates() }, actionLp())
-        installBtn = Theme.primary(context, "Download and install the update") { installUpdate() }.apply { visibility = View.GONE }
-        addView(installBtn, actionLp())
-    })
+    private fun updatesCard() = Theme.card(this).apply {
+        setPadding(dp(context, 20), dp(context, 8), dp(context, 20), dp(context, 8))
+        updateSub = Theme.secondaryText(context, "Only checks when you tap")
+        addView(row("Updates", updateSub, action("Check") { checkUpdates() }))
+        installBtn = Theme.primaryButton(context, "Update now") { installUpdate() }.apply { visibility = View.GONE }
+        addView(installBtn, lp(top = 4, bottom = 12))
+    }
 
-    private fun privacyCard() = Theme.card(LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        addView(Theme.text(context, "Privacy", 22f, Theme.INK, Theme.BOLD))
-        addView(Theme.text(context,
-            "🔒 EmoJet reads the box you're typing in and the message just above it — never password fields.\n" +
-                "📱 Laya runs on this phone. Nothing you type is stored or sent anywhere.\n" +
-                "🌐 Internet is used only for the one-time model download and when you tap \"Check for updates\".",
-            14f, Theme.INK))
-    })
+    private fun privacyCard() = Theme.card(this).apply {
+        addView(Theme.h2(context, "Private by design"))
+        for (line in listOf(
+            "Runs entirely on your phone. Nothing you type is stored or sent anywhere.",
+            "Reads only the box you're typing in and the message just above it. Never password fields.",
+            "Uses the internet once to get ready, and when you check for updates.",
+        )) {
+            addView(Theme.secondaryText(context, line).apply {
+                setCompoundDrawablesRelativeWithIntrinsicBounds(Theme.dot(context, Theme.ACCENT_DEEP), null, null, null)
+                compoundDrawablePadding = dp(context, 12)
+            }, lp(top = 12))
+        }
+    }
 
-    // ---------- state
+    private fun advancedCard() = Theme.card(this).apply {
+        setPadding(dp(context, 20), dp(context, 8), dp(context, 20), dp(context, 8))
+        advancedChevron = action("Show") {
+            val open = advancedBox.visibility != View.VISIBLE
+            advancedBox.visibility = if (open) View.VISIBLE else View.GONE
+            advancedChevron.text = if (open) "Hide" else "Show"
+        }
+        addView(row("Advanced", "Model and diagnostics", advancedChevron))
+        advancedBox = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
+        modelInfo = Theme.secondaryText(context, "")
+        advancedBox.addView(modelInfo, lp(top = 4))
+        testResult = Theme.bodyText(context, "")
+        advancedBox.addView(testResult, lp(top = 10))
+        advancedBox.addView(Theme.secondaryButton(context, "Run a quick test") { selfTest() }, lp(top = 10))
+        advancedBox.addView(Theme.secondaryButton(context, "Import a model file") {
+            startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), PICK_MODEL)
+        }, lp(top = 10, bottom = 12))
+        addView(advancedBox)
+    }
+
+    // ---------------- state
 
     override fun onResume() {
         super.onResume()
@@ -262,7 +282,7 @@ class MainActivity : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
         val uri = data?.data
         if (requestCode != PICK_MODEL || resultCode != RESULT_OK || uri == null) return
-        stepModel.detail.text = "Checking the file…"
+        testResult.text = "Checking the file…"
         Thread {
             val msg = runCatching { models.import(uri) }.getOrElse { "Import failed: ${it.message}" }
             runOnUiThread { testResult.text = msg; refresh() }
@@ -271,60 +291,75 @@ class MainActivity : Activity() {
 
     private fun refresh() {
         val state = models.poll()
-        val modelReady = state is ModelManager.State.Ready
-        stepModel.set(modelReady, when (state) {
-            is ModelManager.State.Ready -> state.model.label
-            is ModelManager.State.Missing -> "Downloaded once (0.25–0.45 GB), then everything works offline."
-            is ModelManager.State.Verifying -> "Checking the downloaded file…"
-            is ModelManager.State.Failed -> "⚠️ ${state.reason}"
-            is ModelManager.State.Downloading -> {
-                val pct = if (state.total > 0) state.done * 100 / state.total else 0
-                "Downloading ${state.label}: $pct % (${state.done / 1_000_000} / ${state.total / 1_000_000} MB)" +
-                    (state.waiting?.let { " — $it" } ?: "") + "\nKeeps going in the background."
-            }
-        })
-        val downloading = state is ModelManager.State.Downloading
-        progress.visibility = vis(downloading || state is ModelManager.State.Verifying)
-        progress.isIndeterminate = state is ModelManager.State.Verifying
-        if (state is ModelManager.State.Downloading && state.total > 0) progress.progress = (state.done * 1000 / state.total).toInt()
-        val idle = state is ModelManager.State.Missing || state is ModelManager.State.Failed
-        downloadBtn.visibility = vis(idle)
-        importBtn.visibility = vis(idle)
-        cancelDl.visibility = vis(downloading)
-        mobileNow.visibility = vis(state is ModelManager.State.Downloading && state.waiting == "waiting for Wi-Fi")
-        val upgrade = if (modelReady) models.upgradeAvailable() else null
-        upgradeBtn.visibility = vis(upgrade != null)
-        upgrade?.let { upgradeBtn.text = "Get the newer model: ${it.label}" }
+        val ready1 = state is ModelManager.State.Ready
+        val ready2 = accessibilityOn()
+        val ready3 = backgroundOk() && notificationsOk()
+        val firstOpen = listOf(ready1, ready2, ready3).indexOfFirst { !it }
 
-        val a11y = accessibilityOn()
-        stepA11y.set(a11y, if (a11y) "On — EmoJet suggests in every app." else "Lets EmoJet see the box you're typing in.")
-        val awake = backgroundOk() && notificationsOk()
-        stepAwake.set(awake, if (awake) "Allowed in the background." else "Without this, the phone may freeze EmoJet while you're in other apps.")
-
-        val paused = System.currentTimeMillis() < Prefs.pausedUntil(this)
-        pauseBtn.text = if (paused) "Resume now (${(Prefs.pausedUntil(this) - System.currentTimeMillis()) / 60_000 + 1} min left)" else "Pause for 1 hour"
-
-        val ready = modelReady && a11y && awake && Prefs.enabled(this) && !paused
-        heroStatus.text = when {
-            ready -> "✅  Ready — just type"
-            paused -> "⏸  Paused"
-            !Prefs.enabled(this) -> "Suggestions are off"
-            else -> "Setup needed — see below"
+        fun stateOf(i: Int, done: Boolean) = when {
+            done -> Theme.STEP_DONE
+            i == firstOpen -> Theme.STEP_NOW
+            else -> Theme.STEP_LATER
         }
+        step1.set(stateOf(0, ready1), when (state) {
+            is ModelManager.State.Ready -> "Ready to use offline"
+            is ModelManager.State.Failed -> "Couldn't finish the download. Check your connection."
+            is ModelManager.State.Verifying -> "Almost there…"
+            is ModelManager.State.Downloading ->
+                if (state.waiting == "waiting for Wi-Fi") "Waiting for Wi-Fi. One-time download, then it works offline."
+                else "One-time download, then it works offline. You can leave the app."
+            is ModelManager.State.Missing -> "One-time download, then it works offline."
+        })
+        step1.actions.visibility = if (!ready1) View.VISIBLE else View.GONE
+        val pct = if (state is ModelManager.State.Downloading && state.total > 0) (state.done * 1000 / state.total).toInt() else 0
+        progress.isIndeterminate = state is ModelManager.State.Verifying || state is ModelManager.State.Missing
+        progress.progress = pct
+        progress.visibility = vis(state !is ModelManager.State.Failed)
+        progressText.text = if (state is ModelManager.State.Downloading) "${pct / 10} %  ·  ${state.done / 1_000_000} of ${state.total / 1_000_000} MB" else ""
+        progressText.visibility = vis(state is ModelManager.State.Downloading)
+        retryBtn.visibility = vis(state is ModelManager.State.Failed)
+        mobileBtn.visibility = vis(state is ModelManager.State.Downloading && state.waiting == "waiting for Wi-Fi")
+        step2.set(stateOf(1, ready2), if (ready2) "" else "So EmoJet can see the box you're typing in.")
+        step3.set(stateOf(2, ready3), if (ready3) "" else "So your phone doesn't pause EmoJet while you use other apps.")
+
+        val allSet = ready1 && ready2 && ready3
+        setupCard.visibility = vis(!allSet)
+        title.text = if (allSet) "You're all set" else "Let's set you up"
+        subtitle.text = if (allSet) "Type in any app, pause, and tap an emoji." else "Three quick steps. About a minute."
+
+        val on = Prefs.enabled(this)
+        val (dotColor, label) = when {
+            !allSet -> Theme.ACCENT_DEEP to "Setting up"
+            !on -> Theme.INK3 to "Off"
+            paused() -> Theme.INK3 to "Paused"
+            else -> Theme.OK to "Ready"
+        }
+        chip.text = label
+        chip.setCompoundDrawablesRelativeWithIntrinsicBounds(Theme.dot(this, dotColor), null, null, null)
+
+        pauseSub.text = if (paused()) "${(Prefs.pausedUntil(this) - System.currentTimeMillis()) / 60_000 + 1} min left" else "Take a quick break from suggestions"
+        pauseAction.text = if (paused()) "Resume" else "Pause"
+
+        val upgrade = if (ready1) models.upgradeAvailable() else null
+        upgradeBtn.visibility = vis(upgrade != null)
 
         val off = Prefs.disabledApps(this).sorted()
-        if (disabledBox.childCount != off.size + (if (off.isEmpty()) 0 else 1)) {
-            disabledBox.removeAllViews()
-            if (off.isNotEmpty()) disabledBox.addView(Theme.text(this, "Switched off in:", 14f, Theme.INK, Theme.MEDIUM).apply { setPadding(0, dp(context, 10), 0, 0) })
+        if (offAppsBox.tag != off) {
+            offAppsBox.tag = off
+            offAppsBox.removeAllViews()
             for (pkg in off) {
                 val name = runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)) }.getOrDefault(pkg)
-                disabledBox.addView(Theme.secondary(this, "Turn back on in $name") { Prefs.enableApp(this, pkg); refresh() }, actionLp())
+                offAppsBox.addView(Theme.hairline(this))
+                offAppsBox.addView(row("Off in $name", "You held the strip's handle there", action("Turn on") { Prefs.enableApp(this, pkg); refresh() }))
             }
         }
-        updates.pollApk()?.let { updateStatus.text = it }
+        modelInfo.text = models.installed()?.let { "Model: ${it.label}" } ?: "Model: not downloaded yet"
+        updates.pollApk()?.let { updateSub.text = it }
     }
 
-    // ---------- actions
+    // ---------------- actions
+
+    private fun paused() = System.currentTimeMillis() < Prefs.pausedUntil(this)
 
     private fun accessibilityOn(): Boolean {
         val service = ComponentName(this, EmojetService::class.java).flattenToString()
@@ -338,6 +373,8 @@ class MainActivity : Activity() {
     private fun backgroundOk() = getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
 
     private fun isXiaomi() = Build.MANUFACTURER.lowercase() in setOf("xiaomi", "redmi", "poco")
+
+    private fun versionName() = packageManager.getPackageInfo(packageName, 0).versionName
 
     private fun openAppInfo() = startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
 
@@ -355,18 +392,19 @@ class MainActivity : Activity() {
     }
 
     private fun checkUpdates() {
-        updateStatus.text = "Checking…"
+        updateSub.text = "Checking…"
         Thread {
             val msg = runCatching {
                 val info = updates.check()
                 lastInfo = info
-                buildString {
-                    append(if (info.appNewer) "EmoJet ${info.versionName} is available. ${info.notes}" else "✅ The app is up to date.")
-                    if (info.modelsNewer) append("\nA newer model is available — see Set up.")
+                when {
+                    info.appNewer -> "Version ${info.versionName} is available"
+                    info.modelsNewer -> "An improved model is available"
+                    else -> "You're up to date"
                 }
-            }.getOrElse { "Couldn't check: ${it.message}" }
+            }.getOrElse { "Couldn't check right now" }
             runOnUiThread {
-                updateStatus.text = msg
+                updateSub.text = msg
                 installBtn.visibility = vis(lastInfo?.appNewer == true)
                 refresh()
             }
@@ -376,12 +414,12 @@ class MainActivity : Activity() {
     private fun installUpdate() {
         val info = lastInfo ?: return
         if (!updates.canInstall()) {
-            updateStatus.text = "Allow EmoJet to install updates (one time), then tap again."
+            updateSub.text = "Allow EmoJet to install updates, then tap again"
             startActivity(updates.unknownSourcesSettings())
             return
         }
         updates.downloadApk(info)
-        updateStatus.text = "Downloading the update…"
+        updateSub.text = "Downloading the update…"
     }
 
     private fun selfTest() {
@@ -390,15 +428,15 @@ class MainActivity : Activity() {
             val engine = Engine.get(this)
             val ranker = Ranker(this)
             val msg = try {
-                if (models.installed() == null) "Download the model first."
-                else if (!engine.start()) "Engine didn't start.\n${engine.lastLog()}"
+                if (models.installed() == null) "The model isn't downloaded yet."
+                else if (!engine.start()) "The engine didn't start.\n${engine.lastLog()}"
                 else {
                     val sentence = "Happy birthday bro!! have an amazing year"
                     val t0 = SystemClock.elapsedRealtime()
                     val emojis = ranker.suggest(engine, sentence, null)
                     val ms = SystemClock.elapsedRealtime() - t0
-                    "\"$sentence\"\n→ ${emojis.joinToString("  ")}   ($ms ms)" +
-                        (if (engine.kind == "classifier") "\ntone: ${ranker.lastTones.joinToString { "${it.name} ${"%.2f".format(it.p)}" }} · style: ${ranker.lastStyle}" else "")
+                    "${emojis.joinToString("  ")}\n$ms ms" +
+                        (if (engine.kind == "classifier") " · ${ranker.lastTones.joinToString { it.name }} · ${ranker.lastStyle}" else "")
                 }
             } catch (e: Exception) {
                 "Error: ${e.message}"
@@ -407,26 +445,41 @@ class MainActivity : Activity() {
         }.start()
     }
 
-    // ---------- helpers
+    // ---------------- building blocks
 
-    private fun switch(label: String, on: Boolean, onChange: (Boolean) -> Unit) = Switch(this).apply {
-        text = label
-        setTextColor(Theme.INK)
-        typeface = Theme.MEDIUM
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-        isChecked = on
-        Theme.tintSwitch(this)
+    /** Settings row: title + subtitle on the left, a control on the right. */
+    private fun row(titleText: String, sub: Any, trailing: View) = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        minimumHeight = dp(context, 64)
         setPadding(0, dp(context, 10), 0, dp(context, 10))
-        setOnCheckedChangeListener { _, v -> onChange(v) }
+        addView(LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(Theme.label(context, titleText))
+            val s = if (sub is TextView) sub else Theme.secondaryText(context, sub.toString())
+            (s.parent as? ViewGroup)?.removeView(s)
+            addView(s, lp(top = 3))
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        addView(trailing)
+    }
+
+    /** Text action on the right of a row ("Pause", "Check"…). */
+    private fun action(s: String, onClick: () -> Unit) = TextView(this).apply {
+        text = s
+        typeface = Theme.semibold
+        setTextColor(Theme.INK)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f)
+        background = Theme.ripple(Theme.round(context, Theme.ACCENT_SOFT, 14), Theme.round(context, Theme.ACCENT_SOFT, 14))
+        setPadding(dp(context, 14), dp(context, 8), dp(context, 14), dp(context, 8))
+        setOnClickListener { onClick() }
     }
 
     private fun vis(b: Boolean) = if (b) View.VISIBLE else View.GONE
 
-    private fun gap() = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        .apply { topMargin = dp(this@MainActivity, 14) }
-
-    private fun actionLp() = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        .apply { topMargin = dp(this@MainActivity, 8) }
+    private fun lp(top: Int = 0, bottom: Int = 0) = LinearLayout.LayoutParams(-1, -2).apply {
+        topMargin = dp(this@MainActivity, top)
+        bottomMargin = dp(this@MainActivity, bottom)
+    }
 
     companion object {
         private const val PICK_MODEL = 1

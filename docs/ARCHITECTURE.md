@@ -4,7 +4,7 @@
 
 Laya is not asked "which emoji?". It is asked **"what is the feeling or topic of this message?"** and picks from ~25 short word labels (`laughing`, `grateful`, `tired`, `food` ...). EmoJet maps the top labels to rows of emojis on its own side ([`shared/moods.json`](../shared/moods.json)).
 
-Why: Laya fits the question **and all the options** into a budget of **192 tokens** (the `max_head_tokens` value stored in the model). One emoji costs 3–6 tokens (❤️ alone is 6). With 64 emoji options every option was cut to ~3 tokens of broken bytes, and the picks were close to random. Word labels cost ~2–3 tokens each, fit easily, and Laya is very good at them (see [RESEARCH.md](RESEARCH.md) for the numbers).
+Why: Laya fits the question **and all the options** into a budget of **192 tokens** (the `max_head_tokens` value stored in the model). One emoji costs 3–6 tokens (❤️ alone is 6). With 64 emoji options every option was cut to ~3 tokens of broken bytes, and the picks were close to random. Word labels cost ~2–3 tokens each, fit easily, and Laya is very good at them (see [RESEARCH.md](https://github.com/subhadeeproy3902/emojet/blob/main/docs/RESEARCH.md) for the numbers).
 
 ```
 your draft text  ─┐
@@ -21,11 +21,11 @@ replied-to msg   ─┼─► Laya (1 forward pass, ~25 mood labels) ─► mood
 
 The blend (same in every client): each of the top 3 moods adds `p(mood) / (1 + 0.35 × rank)` to each emoji in its row; the 6 highest scores win. Reference implementation: `suggest()` in [`scripts/test-prompts.py`](../scripts/test-prompts.py).
 
-### Where this is going: Laya-Emoji
+### Where this is going: Emojet-v1
 
-Moods cover feelings but only the ~150 emojis placed in their rows. The target model (Phase T, [TRAINING.md](TRAINING.md)) is Laya's encoder fine-tuned with a new output layer that scores **all 1,923 distinct emojis** from the **whole message** in one pass — and with a shorter prompt (just the message), so it's also faster. The rest of the pipeline (reply context, skin tone, personal boost, overlay) stays the same; only "mood → rows" is replaced by "scores → top 6".
+Moods cover feelings but only the ~150 emojis placed in their rows. The target model (Phase T, [TRAINING.md](https://github.com/subhadeeproy3902/emojet/blob/main/docs/TRAINING.md)) is Laya's encoder fine-tuned with a new output layer that scores **all 1,923 distinct emojis** from the **whole message** in one pass — and with a shorter prompt (just the message), so it's also faster. The rest of the pipeline (reply context, skin tone, personal boost, overlay) stays the same; only "mood → rows" is replaced by "scores → top 6".
 
-The same pass also outputs **tone of voice** — 4 communication styles, 46 tones, 4 tone dimensions ([`shared/tones.json`](../shared/tones.json)). Tones nudge the emoji ranking toward tone-matched emojis and can drive an optional tone chip / "may sound passive-aggressive" check. Details: [TRAINING.md](TRAINING.md#tone-of-voice-owners-addition-2026-10-04).
+The same pass also outputs **tone of voice** — 4 communication styles, 46 tones, 4 tone dimensions ([`shared/tones.json`](../shared/tones.json)). Tones nudge the emoji ranking toward tone-matched emojis and can drive an optional tone chip / "may sound passive-aggressive" check. Details: [TRAINING.md](https://github.com/subhadeeproy3902/emojet/blob/main/docs/TRAINING.md#tone-of-voice-owners-addition-2026-10-04).
 
 ## Shared pieces (one source of truth)
 
@@ -49,7 +49,7 @@ In llama.cpp, the part that turns `{state, questions}` into Laya prompts and tur
 | Browser extension | "emojet-core" compiled to WebAssembly (emscripten), run in an offscreen document / worker | browsers can't run a server process; same C++ as Android-later, so only one port |
 | Browser, optional fast path | the extension talks to a local `llama-server` if you run one | native speed for power users; off by default, never required |
 
-**Our llama.cpp patch** (`engine/llama.cpp-patches/0001-…`, applied by `scripts/build-engine.sh`): for classifier models, llama-server's `/embedding` returned only the first `n_embd` (1,024) of Laya-Emoji's 1,977 scores; the patch returns all `n_cls_out` scores. Verified 2026-10-05: llama.cpp vs PyTorch on the notebook's reference messages = identical tokens, all scores within 0.004, identical top-6 emojis.
+**Our llama.cpp patch** (`engine/llama.cpp-patches/0001-…`, applied by `scripts/build-engine.sh`): for classifier models, llama-server's `/embedding` returned only the first `n_embd` (1,024) of Emojet-v1's 1,977 scores; the patch returns all `n_cls_out` scores. Verified 2026-10-05: llama.cpp vs PyTorch on the notebook's reference messages = identical tokens, all scores within 0.004, identical top-6 emojis.
 
 Laya is an **encoder** (ModernBERT): every token looks at every other token, so a cached "question + options" prefix cannot be reused across messages. Cost per suggestion grows linearly with prompt length — this is why the prompt is kept short.
 

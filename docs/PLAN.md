@@ -2,7 +2,7 @@
 
 **Goal:** free, fully on-device emoji suggestions while you type — an overlay on Android (WhatsApp, Instagram, SMS, any app) and a browser extension (WhatsApp Web, Instagram, Snapchat, any site). The only AI is **Laya**. Distributed as an APK and an unpacked extension zip on GitHub Releases. **$0** to build, host and run.
 
-Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [TRAINING](TRAINING.md) · [MANUAL-WORK](MANUAL-WORK.md) (your checklist) · [TESTING](TESTING.md) · [HUGGINGFACE](HUGGINGFACE.md) · [RESEARCH](RESEARCH.md)
+Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [TRAINING](https://github.com/subhadeeproy3902/emojet/blob/main/docs/TRAINING.md) · [MANUAL-WORK](MANUAL-WORK.md) (your checklist) · [TESTING](TESTING.md) · [HUGGINGFACE](https://github.com/subhadeeproy3902/emojet/blob/main/docs/HUGGINGFACE.md) · [RESEARCH](https://github.com/subhadeeproy3902/emojet/blob/main/docs/RESEARCH.md)
 
 ## Decisions log
 
@@ -11,7 +11,7 @@ Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [TRAINING](TRAINING.md) · [MAN
 | 2026-10-04 | Laya only; $0; APK + unpacked extension via GitHub Releases, no stores |
 | 2026-10-04 | Mood labels instead of direct emoji choice (192-token budget); Q4_0 model file |
 | 2026-10-04 | No keyword layer — whole sentence only |
-| 2026-10-04 | Target all Unicode emojis + tone of voice via fine-tuned Laya-Emoji |
+| 2026-10-04 | Target all Unicode emojis + tone of voice via fine-tuned Emojet-v1 |
 | 2026-10-05 | **Training on Kaggle** (free GPU); laptop for data prep, conversion and tests |
 | 2026-10-05 | **Small APK (~15 MB) + model downloaded on first launch** (Option A) |
 | 2026-10-05 | **Updates from inside the app / extension** — app, model and data; never uninstall + reinstall ([WORKFLOWS.md](WORKFLOWS.md) §4) |
@@ -19,7 +19,7 @@ Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [TRAINING](TRAINING.md) · [MAN
 ## Design rules (owner's requirements)
 
 1. **Whole sentence, not single words.** The model always reads the full draft (+ the message being replied to). No suggestion is decided by one keyword.
-2. **All emojis.** Target: every emoji in Unicode 18.0 — 3,963 = 1,923 distinct emojis + skin-tone variants (applied from the user's preference). Phase 0's 25 moods are the stepping stone; Laya-Emoji (Phase T) is the goal.
+2. **All emojis.** Target: every emoji in Unicode 18.0 — 3,963 = 1,923 distinct emojis + skin-tone variants (applied from the user's preference). Phase 0's 25 moods are the stepping stone; Emojet-v1 (Phase T) is the goal.
 3. **Real time.** Suggestions within a typing pause; never blocks typing.
 4. **Laya only, $0.** No other AI model at runtime, no paid service, no store.
 5. **Any Android phone.** APK for `arm64-v8a` (all modern phones) + `x86_64` (emulators, Chromebooks), Android 8.0+ (`minSdk 26`). Owner's test phone: Redmi Note 17 Pro.
@@ -42,7 +42,7 @@ Legend: **[Claude]** done by Claude · **[You]** needs your phone / password / a
 | Full emoji catalog (`shared/emoji-catalog.json`) | all 1,923 base emojis + names + CLDR keywords | ✅ [Claude] — `python3 scripts/build-emoji-catalog.py` |
 | Brand assets (`assets/brand/`) | logo, favicons, extension icon sizes | ✅ from the owner's files |
 | A phone with USB debugging | the only real latency test | ⬜ **[You]** Redmi: see MANUAL-WORK §A (Xiaomi has extra switches) |
-| PyTorch + transformers, or a Kaggle account | training Laya-Emoji | ⬜ **[You]** decide A or B in TRAINING.md |
+| PyTorch + transformers, or a Kaggle account | training Emojet-v1 | ⬜ **[You]** decide A or B in TRAINING.md |
 | emscripten | WebAssembly engine for the extension | ⬜ **[You]** sudo, Phase 3 |
 | Hugging Face account | **not needed** (models are public) | — see HUGGINGFACE.md |
 
@@ -74,20 +74,20 @@ The biggest unknown. Laptop: ~390 ms. A phone CPU is typically 2–4× slower, s
 5. [Claude] Experiments on your phone: 8-bit vs 4-bit, 2/4/6 threads, OpenCL (Adreno) / Vulkan GPU backends if your chip has them, fewer moods (e.g. 16) to shorten the prompt.
 6. ✅ **Go**: Q4_0, 4 threads, CPU. Target ≤ 600 ms met.
 
-## Phase T — Train Laya-Emoji (all 1,923 emojis, whole sentence) — ⬜
+## Phase T — Train Emojet-v1 (all 1,923 emojis, whole sentence) — ⬜
 
-Runs in parallel with Phase 1 (same encoder, so phone speed results carry over). Full plan: [TRAINING.md](TRAINING.md).
+Runs in parallel with Phase 1 (same encoder, so phone speed results carry over). Full plan: [TRAINING.md](https://github.com/subhadeeproy3902/emojet/blob/main/docs/TRAINING.md).
 
 1. ✅ [Claude] Laya's encoder loads in PyTorch and matches llama.cpp exactly; Kaggle T4 fits full training (~31–48 min/epoch of 200K) — TRAINING.md step 1.
 2. [Claude] Build the dataset (emojinize 108K sentences + GoEmotions 58K + Laya-teacher + CLDR coverage; tone: GoEmotions map, SARC sarcasm, Stanford politeness, Pavlick formality, Jigsaw toxicity, hand-written styles); your messages = test set.
    - ✅ Tone taxonomy researched (`shared/tones.json`) and untrained-Laya tone baseline measured: tone 18/25 top-3, style 6/13 (`scripts/test-tones.py`).
 3. [Claude] Laptop pilot: frozen encoder + emoji head.
 4. **[You]** Choose where the full training runs (laptop GPU vs free Kaggle GPU); [Claude] runs or prepares it.
-5. [Claude] Convert to GGUF Q4_0, verify, A/B against the mood model. Laya-Emoji replaces moods only if it wins on your test set.
+5. [Claude] Convert to GGUF Q4_0, verify, A/B against the mood model. Emojet-v1 replaces moods only if it wins on your test set.
 
 ## Phase 2 — Android overlay app — 🔄 first build done, waiting for phone test
 
-Status 2026-10-05: `android/` builds with `bash scripts/build-android.sh` → 8.4 MB debug / 7.3 MB release APK (Kotlin, plain views, AGP 9.4.1, Gradle 9.8, no libraries). Done: engine (1), model manager (2: DownloadManager, Wi-Fi only by default, sha256, fallback to the official 449 MB file while ours isn't published, import .gguf), AccessibilityService (3), overlay strip + insert at cursor (4), debounce/dedup with multi-emoji chaining (5), on/off switch (7, partial). Since then (same day): reply context in **any app** (6, generic nearest-text-above-the-input, `ReplyFinder.kt`), quick-settings tile + pause + long-press to switch off per app (7, 8), privacy section (8), Updates screen with in-place APK install + model list updates (9), signing key + signed builds (10, key in `~/.config/emojet`). Laya-Emoji runtime path ready (classifier scores via `/embedding`). Waiting for: phone test, trained model.
+Status 2026-10-05: `android/` builds with `bash scripts/build-android.sh` → 8.4 MB debug / 7.3 MB release APK (Kotlin, plain views, AGP 9.4.1, Gradle 9.8, no libraries). Done: engine (1), model manager (2: DownloadManager, Wi-Fi only by default, sha256, fallback to the official 449 MB file while ours isn't published, import .gguf), AccessibilityService (3), overlay strip + insert at cursor (4), debounce/dedup with multi-emoji chaining (5), on/off switch (7, partial). Since then (same day): reply context in **any app** (6, generic nearest-text-above-the-input, `ReplyFinder.kt`), quick-settings tile + pause + long-press to switch off per app (7, 8), privacy section (8), Updates screen with in-place APK install + model list updates (9), signing key + signed builds (10, key in `~/.config/emojet`). Emojet-v1 runtime path ready (classifier scores via `/embedding`). Waiting for: phone test, trained model.
 
 1. [Claude] Engine service: starts `llama-server` from the APK's native-lib folder on a random localhost port + random API key, loads the model once, stops after idle.
 2. [Claude] Model manager: first-run download (pinned revision, sha256, resumable, Wi-Fi only), GitHub mirror fallback, "import .gguf" button.

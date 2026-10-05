@@ -28,6 +28,13 @@ EmoJet itself is MIT-licensed (see `LICENSE`). It uses or redistributes:
 ## Tone taxonomy (`shared/tones.json`)
 Our own list, compiled from public descriptions of tone (owner's brief; Nielsen Norman Group "Tone-of-Voice Words"; PapersOwl "Types of Tone"; Grammarly's tone detector). Only tone names and short definitions are used — no text copied.
 
+## Fonts (bundled in the APK, `assets/fonts/`)
+- Syne — https://github.com/google/fonts/tree/main/ofl/syne — SIL Open Font License 1.1 (licence text: `assets/fonts/OFL-Syne.txt`)
+- DM Sans — https://github.com/google/fonts/tree/main/ofl/dmsans — SIL Open Font License 1.1 (licence text: `assets/fonts/OFL-DMSans.txt`)
+
+## Model
+- Emojet (the model this app runs) lives in its own repo: https://github.com/subhadeeproy3902/emojet — Apache-2.0, a fine-tune of Laya.
+
 ## Not used
 - emoji-jev (https://github.com/colinmcdermott/emoji-jev) inspired the idea. It has no licence, so none of its code or emoji data is copied.
 

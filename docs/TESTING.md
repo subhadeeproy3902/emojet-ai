@@ -24,7 +24,7 @@ Pass criteria (current baseline in brackets, 2026-10-04):
 | Real memory (RssAnon) of `llama-server` | ≤ 300 MB | 266 MB |
 | Phone median (`bash scripts/phone-bench.sh`, REDMI Note 17 Pro 5G, 4 threads) | ≤ 600 ms | 306–356 ms |
 
-Tone/style check — `python3 scripts/test-tones.py` (same server). Baseline, untrained Laya: tone 14/25 first pick, 18/25 top 3; style 6/13. Laya-Emoji must beat it, especially on sarcastic / passive-aggressive / condescending / accusatory.
+Tone/style check — `python3 scripts/test-tones.py` (same server). Baseline, untrained Laya: tone 14/25 first pick, 18/25 top 3; style 6/13. Emojet-v1 must beat it, especially on sarcastic / passive-aggressive / condescending / accusatory.
 
 When your ~50 messages arrive they replace the 23 samples as the main score (the 23 stay as a regression set).
 

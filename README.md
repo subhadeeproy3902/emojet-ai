@@ -20,7 +20,7 @@ Laya reads your draft (and the message you're replying to) and picks its **mood*
 | Memory | ~265 MB |
 | Reply-aware | 3/3 reply cases right with context, 0/3 without |
 
-Phase 1 (phone speed) passed. Next: Phase T — train **Laya-Emoji**, a fine-tuned Laya that reads the whole message and scores all 1,923 distinct emojis of Unicode 18.0 (3,963 with skin tones) in one pass, plus the **tone of voice** (4 communication styles, 46 tones — sarcastic, passive-aggressive, empathetic, …) so emojis match how you're saying it ([docs/TRAINING.md](docs/TRAINING.md)). Full roadmap: [docs/PLAN.md](docs/PLAN.md). What the owner has to do by hand: [docs/MANUAL-WORK.md](docs/MANUAL-WORK.md).
+Phase 1 (phone speed) passed. Next: Phase T — train **Emojet-v1**, a fine-tuned Laya that reads the whole message and scores all 1,923 distinct emojis of Unicode 18.0 (3,963 with skin tones) in one pass, plus the **tone of voice** (4 communication styles, 46 tones — sarcastic, passive-aggressive, empathetic, …) so emojis match how you're saying it ([docs/TRAINING.md](https://github.com/subhadeeproy3902/emojet/blob/main/docs/TRAINING.md)). Full roadmap: [docs/PLAN.md](docs/PLAN.md). What the owner has to do by hand: [docs/MANUAL-WORK.md](docs/MANUAL-WORK.md).
 
 ## Try the engine on a laptop
 
@@ -45,11 +45,11 @@ No app stores, on purpose (zero cost, zero review):
 | [PLAN](docs/PLAN.md) | phases, status, who does what |
 | [WORKFLOWS](docs/WORKFLOWS.md) | the big picture: making the model, installing, typing, in-app updates |
 | [ARCHITECTURE](docs/ARCHITECTURE.md) | how the Android app and extension work |
-| [TRAINING](docs/TRAINING.md) | Laya-Emoji: covering all emojis from the whole sentence |
+| [TRAINING](https://github.com/subhadeeproy3902/emojet/blob/main/docs/TRAINING.md) | Emojet-v1: covering all emojis from the whole sentence |
 | [MANUAL-WORK](docs/MANUAL-WORK.md) | the owner's checklist (sudo, phone, accounts, decisions) |
 | [TESTING](docs/TESTING.md) | automatic tests + hands-on test manual |
-| [HUGGINGFACE](docs/HUGGINGFACE.md) | what we need from Hugging Face (spoiler: no account) |
-| [RESEARCH](docs/RESEARCH.md) | Jev vs Laya, experiments and numbers |
+| [HUGGINGFACE](https://github.com/subhadeeproy3902/emojet/blob/main/docs/HUGGINGFACE.md) | what we need from Hugging Face (spoiler: no account) |
+| [RESEARCH](https://github.com/subhadeeproy3902/emojet/blob/main/docs/RESEARCH.md) | Jev vs Laya, experiments and numbers |
 
 ## License
 

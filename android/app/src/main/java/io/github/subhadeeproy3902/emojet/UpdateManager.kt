@@ -123,7 +123,7 @@ class UpdateManager(context: Context) {
     }
 
     companion object {
-        const val URL_UPDATES = "https://raw.githubusercontent.com/subhadeeproy3902/emojet/main/updates.json"
+        const val URL_UPDATES = "https://raw.githubusercontent.com/subhadeeproy3902/emojet-ai/main/updates.json"
     }
 }
 

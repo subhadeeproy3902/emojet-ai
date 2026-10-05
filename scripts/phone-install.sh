@@ -5,6 +5,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+MODELS="${MODELS:-$ROOT/../emojet/models}"   # model files live in the emojet model repo (git-ignored)
 PKG=io.github.subhadeeproy3902.emojet
 APK="$ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
 DEST="/sdcard/Android/data/$PKG/files"
@@ -22,7 +23,7 @@ adb install -r "$APK" | tail -1
 adb shell mkdir -p "$DEST"
 files=("$@")
 if [[ ${#files[@]} -eq 0 ]]; then
-  for f in "$ROOT"/models/Laya-Emoji-Q4_0.gguf "$ROOT"/models/Laya-Q4_0.gguf; do [[ -f "$f" ]] && files+=("$f"); done
+  for f in "$MODELS"/Laya-Emoji-Q4_0.gguf "$MODELS"/Laya-Q4_0.gguf; do [[ -f "$f" ]] && files+=("$f"); done
 fi
 for f in "${files[@]}"; do
   name=$(basename "$f")

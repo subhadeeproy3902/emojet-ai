@@ -8,7 +8,7 @@ import kotlin.math.exp
  * Turns the whole draft (+ the message being replied to) into 6 emojis.
  * - "decision" model (Laya): asks the mood question, blends the top moods' emoji rows
  *   (same algorithm as suggest() in scripts/test-prompts.py).
- * - "classifier" model (Laya-Emoji): one pass scores all 1,923 emojis + 46 tones + 4 styles;
+ * - "classifier" model (Emojet-v1): one pass scores all 1,923 emojis + 46 tones + 4 styles;
  *   label order = shared/emoji-catalog.json then shared/tones.json (same as the training notebook).
  */
 class Ranker(context: Context) {
@@ -46,7 +46,7 @@ class Ranker(context: Context) {
         if (engine.kind == "classifier") classifier(engine, draft, replyingTo, n)
         else moodsToEmojis(engine.decide(request(draft, replyingTo)), n)
 
-    // ---- Laya-Emoji ----
+    // ---- Emojet-v1 ----
 
     /** Must match fmt() in the training notebook exactly. */
     fun format(draft: String, replyingTo: String?): String =

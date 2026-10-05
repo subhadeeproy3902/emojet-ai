@@ -14,7 +14,7 @@ import java.security.MessageDigest
  */
 class ModelManager(context: Context) {
 
-    /** kind: "decision" = Laya answering the mood question; "classifier" = Laya-Emoji scoring every emoji at once. */
+    /** kind: "decision" = Laya answering the mood question; "classifier" = Emojet-v1 scoring every emoji at once. */
     data class Model(val id: String, val file: String, val size: Long, val sha256: String, val label: String, val urls: List<String>, val kind: String)
 
     sealed class State {

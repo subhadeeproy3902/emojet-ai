@@ -8,10 +8,11 @@ TYPE="${1:-debug}"
 SDK="${ANDROID_HOME:-$HOME/Android/Sdk}"
 NDK="${NDK:-$SDK/ndk/30.0.16248370}"
 LLAMA="${LLAMA:-$HOME/build/llama.cpp}"
+MODEL_REPO="${MODEL_REPO:-$ROOT/../emojet}"   # the emojet model repo (engine patch lives there)
 export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk}"
 
 # 1. Laya engine for arm64 phones (pinned llama.cpp + EmoJet patches, KleidiAI).
-bash "$ROOT/scripts/build-engine.sh" android
+bash "$MODEL_REPO/scripts/build-engine.sh" android
 JNI="$ROOT/android/app/src/main/jniLibs/arm64-v8a"
 mkdir -p "$JNI"
 "$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" -o "$JNI/libllama_server.so" "$LLAMA/build-android/bin/llama-server"

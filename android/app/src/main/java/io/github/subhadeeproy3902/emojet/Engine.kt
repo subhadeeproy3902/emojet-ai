@@ -56,13 +56,13 @@ class Engine private constructor(private val app: Context) {
         process = null
     }
 
-    /** "decision" (Laya, mood question) or "classifier" (Laya-Emoji); valid after start(). */
+    /** "decision" (Laya, mood question) or "classifier" (Emojet-v1); valid after start(). */
     @Volatile var kind: String = "decision"
         private set
 
     fun decide(request: JSONObject): JSONObject = JSONObject(http("POST", "/v1/systemone", request.toString()))
 
-    /** Laya-Emoji: raw scores for every output (emojis, tones, styles, dimensions), no normalisation. */
+    /** Emojet-v1: raw scores for every output (emojis, tones, styles, dimensions), no normalisation. */
     fun classify(text: String): FloatArray {
         val body = JSONObject().put("content", text).put("embd_normalize", -1).toString()
         var v: Any = org.json.JSONArray(http("POST", "/embedding", body)).getJSONObject(0).get("embedding")

@@ -52,6 +52,7 @@ class EmojetService : AccessibilityService() {
     @Volatile private var generation = 0
 
     override fun onServiceConnected() {
+        Theme.init(this)
         keepAwake()
         engine = Engine.get(this)
         ranker = Ranker(this)
@@ -156,9 +157,9 @@ class EmojetService : AccessibilityService() {
         for (emoji in emojis) {
             emojiRow.addView(TextView(this).apply {
                 text = emoji
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 25f)
-                setPadding(dp(7), dp(3), dp(7), dp(3))
-                background = Theme.ripple(Theme.round(this@EmojetService, 0x00000000, 18), Theme.round(this@EmojetService, Theme.SUN, 18))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+                setPadding(dp(6), dp(2), dp(6), dp(2))
+                background = Theme.ripple(null, Theme.round(this@EmojetService, Theme.ACCENT_SOFT, 16))
                 setOnClickListener {
                     it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     it.animate().scaleX(1.35f).scaleY(1.35f).setDuration(90).withEndAction {
@@ -196,15 +197,15 @@ class EmojetService : AccessibilityService() {
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(4), dp(3), dp(4), dp(3))
-            background = Theme.gloss(this@EmojetService, 26)
-            elevation = dp(8).toFloat()
+            setPadding(dp(2), dp(4), dp(2), dp(4))
+            background = Theme.gloss(this@EmojetService, 24)
+            elevation = dp(6).toFloat()
         }
         val grip = TextView(this).apply {
             text = "⠿"
-            setTextColor(0x99000000.toInt())
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-            setPadding(dp(8), dp(4), dp(4), dp(4))
+            setTextColor(0x7317150F)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+            setPadding(dp(10), dp(4), dp(4), dp(4))
             contentDescription = "Move the emoji strip"
         }
         grip.setOnTouchListener(DragToMove(bar))
@@ -213,9 +214,10 @@ class EmojetService : AccessibilityService() {
         bar.addView(row)
         bar.addView(TextView(this).apply {
             text = "✕"
-            setTextColor(0x99000000.toInt())
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-            setPadding(dp(6), dp(4), dp(10), dp(4))
+            typeface = Theme.medium
+            setTextColor(0x7317150F)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setPadding(dp(6), dp(4), dp(12), dp(4))
             contentDescription = "Close until you type a new word"
             setOnClickListener {
                 dismissedWords = words(target?.let(::textOf).orEmpty())

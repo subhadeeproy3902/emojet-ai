@@ -7,10 +7,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+MODELS="${MODELS:-$ROOT/../emojet/models}"   # model files live in the emojet model repo (git-ignored)
 THREADS="${1:-4}"
 NDK="${NDK:-$HOME/Android/Sdk/ndk/30.0.16248370}"
 BIN="${BIN:-$HOME/build/llama.cpp/build-android/bin/llama-server}"
-MODEL="${MODEL:-$ROOT/models/Laya-Q4_0.gguf}"
+MODEL="${MODEL:-$MODELS/Laya-Q4_0.gguf}"
 DIR=/data/local/tmp/emojet
 
 adb get-state >/dev/null
@@ -50,4 +51,4 @@ trap cleanup EXIT
 
 for _ in $(seq 1 60); do curl -s 127.0.0.1:8085/health | grep -q ok && break; sleep 0.5; done
 echo "threads: $THREADS, real memory: $(adb shell "grep RssAnon /proc/\$(pidof llama-server)/status" | tr -s ' ' | cut -d' ' -f2-)"
-python3 "$ROOT/scripts/test-prompts.py" --url http://127.0.0.1:8085/v1/systemone
+python3 "$ROOT/../emojet/scripts/test-prompts.py" --url http://127.0.0.1:8085/v1/systemone

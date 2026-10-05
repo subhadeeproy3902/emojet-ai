@@ -9,7 +9,7 @@ Claude does all the coding, building, local installs in your home folder, testin
    - Without it, Claude copies the APK to the phone over the cable (`adb push`) and you tap it in Files → Downloads → Install. Same path real users take.
    - ⚠️ Never sign out of / reset a phone signed in to a Xiaomi account whose password you don't know (Find Device lock).
 2. ✅ **Kaggle account** (training, $0) — done 2026-10-05: account `subhadeep3902`, token in `.env` (`KAGGLE_API_TOKEN=KGAT_…`, `KAGGLE_USERNAME`), git-ignored, login verified.
-3. **Your messages file** — create `/mnt/shared/EndeavourOS/emojet/data/my-messages.txt` (the `data/` folder is never uploaded, so it stays private). One message per line, `|` between fields:
+3. **Your messages file** — create `/mnt/shared/EndeavourOS/emojet-ai/data/my-messages.txt` (the `data/` folder is never uploaded, so it stays private). One message per line, `|` between fields:
    ```
    bhai kya scene hai aaj party karte hain | 🎉🥳🍻 | enthusiastic, playful
    it's fine. really. I'm fine. | 🙂🙃 | bitter | passive-aggressive
@@ -18,7 +18,7 @@ Claude does all the coding, building, local installs in your home folder, testin
    ```
    Fields: message | emojis you'd add | tones (optional) | style (optional). A line starting with `>` is the message you're replying to (applies to the next line). Aim for ~50 everyday messages + 5–10 per style and per hard tone (sarcastic, passive-aggressive, condescending, defensive, cynical, accusatory). Partial is fine — start with 20.
 4. **Quick answers** (one line each): tone chip yes/no/later · tone check before sending yes/no/later · their-tone yes/no/later · moods.json rows OK or changes.
-5. **Start the session**: open Claude Code in `/mnt/shared/EndeavourOS/emojet` (or your home folder) and say: *"Continue EmoJet — start Phase 1 and Phase T."* Claude reads `CLAUDE.md` + `docs/PLAN.md` and picks up from there.
+5. **Start the session**: open Claude Code in `/mnt/shared/EndeavourOS/emojet-ai` (or your home folder) and say: *"Continue EmoJet — start Phase 1 and Phase T."* Claude reads `CLAUDE.md` + `docs/PLAN.md` and picks up from there.
 
 Nothing to install with sudo for this step. (Kaggle's command-line tool is only in the AUR; Claude will review its PKGBUILD or use a small script instead — decided next session.)
 
@@ -56,7 +56,7 @@ On HyperOS, an overlay app needs more than stock Android: Settings → Apps → 
 - [ ] **Write ~50 messages the way you text** (English + Hinglish, short and long, with the emoji you'd add). Only your own words — no screenshots of other people's chats. This becomes the real test set; 23 samples is too few to tune on.
 - [ ] **Tone examples in your voice**: for each communication style (assertive, passive, aggressive, passive-aggressive) and the hard tones (sarcastic, condescending, defensive, cynical, accusatory), write 5–10 messages the way you or your friends would actually text them. No free dataset covers these well; your examples become test data and seeds. Template: [`shared/tones.json`](../shared/tones.json) has one example per style.
 - [ ] **Tone chip / tone check** (Phase 4 ideas): yes / no / later.
-- [x] **Where Laya-Emoji gets trained** — decided 2026-10-05: **Kaggle** (free GPU). Needs the account + token from ★ step 2.
+- [x] **Where Emojet-v1 gets trained** — decided 2026-10-05: **Kaggle** (free GPU). Needs the account + token from ★ step 2.
 - [x] **Model delivery** — decided 2026-10-05: small APK, model downloaded on first launch.
 - [x] **Updates** — decided 2026-10-05: from inside the app / extension, no uninstall ([WORKFLOWS.md](WORKFLOWS.md) §4).
 - [ ] **Model size** after Phase 1: Q4_0 (252 MB) is the current pick; confirm after the phone test.
@@ -81,7 +81,7 @@ On HyperOS, an overlay app needs more than stock Android: Settings → Apps → 
 - [ ] **Back up the APK signing key — created 2026-10-05.** Copy both `~/.config/emojet/emojet-release.jks` and `~/.config/emojet/keystore.properties` (holds the password) somewhere off the laptop (password manager / USB stick / private cloud). If they are lost, installed EmoJet apps can't be updated in place. They are never in git.
 - [ ] **Say "go" for each public GitHub Release** (APK + extension zip). Claude prepares it; publishing is a public action, so it waits for your OK.
 - [ ] **Firefox only:** normal Firefox can't keep an unsigned extension after a restart. Free fix: Mozilla signs it as "unlisted" (not a store listing, still $0) — needs a free Mozilla account + API key from you. Chrome / Edge / Brave: "Load unpacked" stays installed, nothing needed.
-- [ ] **Hugging Face account — only if** we publish our own model file. Steps in [HUGGINGFACE.md](HUGGINGFACE.md). Not needed otherwise.
+- [ ] **Hugging Face account — only if** we publish our own model file. Steps in [HUGGINGFACE.md](https://github.com/subhadeeproy3902/emojet/blob/main/docs/HUGGINGFACE.md). Not needed otherwise.
 
 ## F. What every user (including you) does when installing the APK
 

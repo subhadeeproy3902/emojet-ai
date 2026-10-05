@@ -50,7 +50,7 @@ download small APK (~8 MB) from GitHub → install → open EmoJet once
 → download done → checked (sha256) even if the app is closed → suggestions start working, offline from then on
 ```
 
-Source today: Laya's official 449 MB file on Hugging Face (our smaller / trained models are not published yet). When Laya-Emoji is published, it's added to `updates.json` → installed apps offer it under Model after "Check for updates".
+Source today: Laya's official 449 MB file on Hugging Face (our smaller / trained models are not published yet). When Emojet-v1 is published, it's added to `updates.json` → installed apps offer it under Model after "Check for updates".
 
 Extension: download zip → unzip → Load unpacked → the extension downloads the model once.
 
@@ -59,7 +59,7 @@ Extension: download zip → unzip → Load unpacked → the extension downloads 
 ```
 type "it's fine. really. I'm fine." → pause ~0.35 s
 → Reader: whole text + replied-to message
-→ Engine: one Laya-Emoji pass → 1,923 emoji scores + tone + style
+→ Engine: one Emojet-v1 pass → 1,923 emoji scores + tone + style
 → Ranker: tone boost, skin tone, personal history → 🙂 🙃 😑 😒 🫠 👍
 → strip near Send → tap inserts at the cursor → keep typing, suggestions keep coming
 ```
