@@ -130,7 +130,8 @@ class EmojetService : AccessibilityService() {
         worker.execute {
             if (gen != generation) return@execute
             if (!engine.start()) { log { "engine not started" }; return@execute }
-            val reply = if (Prefs.useReply(this)) runCatching {
+            val ownScreen = target?.packageName?.toString() == packageName     // EmoJet's own "Try it" box has no conversation
+            val reply = if (Prefs.useReply(this) && !ownScreen) runCatching {
                 target?.let { ReplyFinder.find(rootInActiveWindow, it, text, resources.displayMetrics.heightPixels, resources.displayMetrics.widthPixels) }
             }.getOrNull() else null
             if (gen != generation) return@execute

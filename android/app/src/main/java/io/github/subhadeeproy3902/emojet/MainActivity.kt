@@ -116,10 +116,16 @@ class MainActivity : Activity() {
         col.addView(advancedCard(), lp(top = 16))
         col.addView(Theme.caption(this, "EmoJet ${versionName()} · free and open source").apply { gravity = Gravity.CENTER }, lp(top = 28))
 
-        setContentView(ScrollView(this).apply {
-            setBackgroundColor(Theme.PAPER)
+        // Edge-to-edge (Android 15+): a solid paper band behind the status bar, content scrolls below it.
+        val scroll = ScrollView(this).apply {
             isVerticalScrollBarEnabled = false
+            clipToPadding = true
             addView(col)
+        }
+        setContentView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Theme.PAPER)
+            addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
             setOnApplyWindowInsetsListener { v, insets ->
                 @Suppress("DEPRECATION")
                 v.setPadding(0, insets.systemWindowInsetTop, 0, insets.systemWindowInsetBottom)
@@ -265,10 +271,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (Build.VERSION.SDK_INT >= 33 && !notificationsOk()) {
-            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2)
-        }
-        models.autoStartOnce()
+        models.autoStartOnce()           // notifications are asked for in step 3, with context
         main.post(ticker)
     }
 

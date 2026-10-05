@@ -1,7 +1,16 @@
 {
-  "version": 1,
+  "version": 2,
   "note": "Model files in order of preference; the app uses the first one present and auto-downloads the first one that has URLs. Entries without URLs are not published yet (arrive by USB / import). Pinned URLs + sha256.",
   "models": [
+    {
+      "id": "emojet-v1",
+      "file": "Emojet-v1-Q4_K_M.gguf",
+      "size": 273977888,
+      "sha256": "d193f33f5a3a3fab44fcdda4c6637e8ef4419e35dcf169c2a94f47c94306a7b3",
+      "label": "Emojet-v1 (4-bit, 273 MB)",
+      "urls": [],
+      "kind": "classifier"
+    },
     {
       "id": "laya-q4_0",
       "file": "Laya-Q4_0.gguf",
