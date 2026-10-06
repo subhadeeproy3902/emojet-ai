@@ -20,9 +20,9 @@ class Ranker(context: Context) {
     private val moods = LinkedHashMap<String, List<String>>()
     private val emojis: List<String>
     private val isTopic: BooleanArray
-    private val tones: List<String>
-    private val toneRows: List<List<Int>>
-    private val styles: List<String>
+    /** Label layout after the emojis; picked by the model's output count (v1: 46 tones/4 styles/4 axes, v2: 65/8/6). */
+    private class Layout(val tones: List<String>, val toneRows: List<List<Int>>, val styles: List<String>, val dims: Int)
+    private val layouts: List<Layout>
 
     @Volatile var lastTones: List<Tone> = emptyList()
         private set
@@ -45,14 +45,20 @@ class Ranker(context: Context) {
             (e.getString("group") in TOPIC_GROUPS || e.getString("sub") in TOPIC_SUBS) && e.getString("e") !in VIBE
         }
         val index = emojis.withIndex().associate { (i, e) -> e to i }
-        val t = JSONObject(assets.open("tones.json").bufferedReader().use { it.readText() })
-        val tj = t.getJSONObject("tones")
-        tones = tj.keys().asSequence().toList()
-        toneRows = tones.map { name ->
-            val row = tj.getJSONObject(name).getJSONArray("emojis")
-            (0 until row.length()).mapNotNull { index[row.getString(it)] }
+        layouts = listOf("tones.json", "tones-v1.json").map { file ->
+            val t = JSONObject(assets.open(file).bufferedReader().use { it.readText() })
+            val tj = t.getJSONObject("tones")
+            val names = tj.keys().asSequence().toList()
+            Layout(
+                names,
+                names.map { name ->
+                    val row = tj.getJSONObject(name).getJSONArray("emojis")
+                    (0 until row.length()).mapNotNull { index[row.getString(it)] }
+                },
+                t.getJSONObject("styles").getJSONObject("options").keys().asSequence().toList(),
+                t.getJSONObject("dimensions").keys().asSequence().count { it != "note" },
+            )
         }
-        styles = t.getJSONObject("styles").getJSONObject("options").keys().asSequence().toList()
     }
 
     fun suggest(engine: Engine, draft: String, replyingTo: String?, n: Int = 6): List<String> =
@@ -71,9 +77,12 @@ class Ranker(context: Context) {
      */
     private fun classifier(engine: Engine, draft: String, replyingTo: String?, n: Int): List<String> {
         val ne = emojis.size
-        val nt = tones.size
         var s = engine.classify(format(draft, null))
-        if (s.size < ne + nt + styles.size) return emptyList()
+        val lay = layouts.firstOrNull { s.size == ne + it.tones.size + it.styles.size + it.dims } ?: return emptyList()
+        val tones = lay.tones
+        val toneRows = lay.toneRows
+        val styles = lay.styles
+        val nt = tones.size
         if (!replyingTo.isNullOrBlank()) {
             // a confident draft ("Laptop") keeps its own emojis; a vague one ("yes!!") follows the reply
             val m1 = (0 until ne).maxOf { s[it] }
