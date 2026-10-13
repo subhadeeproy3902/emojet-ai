@@ -3,6 +3,15 @@
   "note": "Model files in order of preference; the app uses the first one present and auto-downloads the first one that has URLs. Entries without URLs are not published yet (arrive by USB / import). Pinned URLs + sha256.",
   "models": [
     {
+      "id": "emojet-v2round2",
+      "file": "Emojet-v2round2-Q4_K_M.gguf",
+      "size": 273993056,
+      "sha256": "ad9e0dcaf6e9a486b52000cfb040226aa029eed1e920bc9a1333400771c513e5",
+      "label": "Emojet (real-data + slang round 2, 4-bit, 274 MB)",
+      "urls": [],
+      "kind": "classifier"
+    },
+    {
       "id": "emojet-v2",
       "file": "Emojet-v2-Q4_K_M.gguf",
       "size": 273993056,
