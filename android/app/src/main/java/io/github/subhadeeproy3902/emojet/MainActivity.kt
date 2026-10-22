@@ -194,6 +194,16 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(0, -2, 1f))
         chip = Theme.chip(context)
         addView(chip)
+        addView(TextView(context).apply {
+            text = "?"
+            typeface = Theme.semibold
+            setTextColor(Theme.INK)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            gravity = Gravity.CENTER
+            contentDescription = "Help"
+            background = Theme.ripple(Theme.round(context, Theme.SURFACE2, 18, Theme.LINE), Theme.round(context, Theme.SURFACE2, 18))
+            setOnClickListener { startActivity(Intent(this@MainActivity, HelpActivity::class.java)) }
+        }, LinearLayout.LayoutParams(dp(context, 36), dp(context, 36)).apply { marginStart = dp(context, 8) })
     }
 
     private fun buildSetup() = Theme.card(this).apply {

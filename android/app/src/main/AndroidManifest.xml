@@ -29,6 +29,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".HelpActivity" android:exported="false" />
+
         <service
             android:name=".EmojetService"
             android:exported="true"
