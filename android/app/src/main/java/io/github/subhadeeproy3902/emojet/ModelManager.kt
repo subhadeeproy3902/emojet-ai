@@ -8,7 +8,7 @@ import java.io.File
 import java.security.MessageDigest
 
 /**
- * The Laya model file: one-time download (Android's DownloadManager: resumable, notification,
+ * The model file: one-time download (Android's DownloadManager: resumable, notification,
  * Wi-Fi only unless allowed), sha256 check, fallback to the next source, or import from a file.
  * Sources and checksums come from shared/models.json.
  */
@@ -58,11 +58,30 @@ class ModelManager(context: Context) {
         return models.firstOrNull { it.urls.isNotEmpty() }?.takeIf { models.indexOf(it) < models.indexOf(current) }
     }
 
+    /** The model the app would download (the best one that has a source), for size and label. */
+    fun downloadable(): Model? = models.firstOrNull { it.urls.isNotEmpty() }
+
+    /** Bytes the one-time download needs, so the app can say so before asking for anything. */
+    fun downloadSizeBytes(): Long = downloadable()?.size ?: 0L
+
+    /** Free bytes needed beyond what the phone has, or 0 when there is room (plus 10% headroom). */
+    fun storageShortfall(): Long {
+        val need = (downloadSizeBytes() * 1.1).toLong()
+        val free = runCatching { dir.usableSpace }.getOrDefault(Long.MAX_VALUE)
+        return (need - free).coerceAtLeast(0)
+    }
+
     fun startDownload(allowMobileData: Boolean) {
         prefs.edit().putBoolean("mobile", allowMobileData).remove("error").apply()
         val first = models.indexOfFirst { it.urls.isNotEmpty() }
-        if (first < 0) prefs.edit().putString("error", "No download source configured. Import the model file instead.").apply()
-        else enqueue(first, 0)
+        val short = storageShortfall()
+        when {
+            first < 0 -> prefs.edit().putString("error", "No download source configured. Import the model file instead.").apply()
+            // without this the download fails deep inside DownloadManager with a number nobody can act on
+            short > 0 -> prefs.edit().putString("error",
+                "Not enough space: free about ${short / 1_000_000 + 1} MB and try again.").apply()
+            else -> enqueue(first, 0)
+        }
     }
 
     /** First launch: start the download by itself (Wi-Fi only) unless it already ran or a model is present. */
@@ -87,7 +106,7 @@ class ModelManager(context: Context) {
         File(dir, m.file + ".part").delete()
         val request = DownloadManager.Request(Uri.parse(m.urls[url]))
             .setTitle("EmoJet: ${m.label}")
-            .setDescription("One-time download of the on-device Laya model")
+            .setDescription("One-time download of the on-device model")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
             .setDestinationInExternalFilesDir(app, null, m.file + ".part")
             .setAllowedOverMetered(prefs.getBoolean("mobile", false))
@@ -184,7 +203,7 @@ class ModelManager(context: Context) {
         val m = models.firstOrNull { it.sha256 == hash }
         if (m == null) {
             tmp.delete()
-            return "That file isn't a known Laya model (checksum doesn't match)."
+            return "That file isn't a model EmoJet knows (checksum doesn't match)."
         }
         tmp.renameTo(fileOf(m))
         return "Imported ${m.label}."

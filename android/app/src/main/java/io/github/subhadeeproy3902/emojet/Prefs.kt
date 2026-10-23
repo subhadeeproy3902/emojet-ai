@@ -23,6 +23,15 @@ object Prefs {
     fun skinTone(c: Context): Int = prefs(c).getInt("skin_tone", 0)
     fun setSkinTone(c: Context, tone: Int) = prefs(c).edit().putInt("skin_tone", tone).apply()
 
+    /** First run finished (OnboardingActivity). */
+    fun onboarded(c: Context): Boolean = prefs(c).getBoolean("onboarded", false)
+    fun setOnboarded(c: Context, v: Boolean) = prefs(c).edit().putBoolean("onboarded", v).apply()
+
+    /** How often the notification permission was asked. Android stops showing the dialog after two refusals,
+     *  so the third time we send the user to the system settings page instead of a dialog that never appears. */
+    fun notifAsks(c: Context): Int = prefs(c).getInt("notif_asks", 0)
+    fun countNotifAsk(c: Context) = prefs(c).edit().putInt("notif_asks", notifAsks(c) + 1).apply()
+
     fun disabledApps(c: Context): Set<String> = prefs(c).getStringSet("disabled_apps", emptySet()) ?: emptySet()
     fun disableApp(c: Context, pkg: String) = prefs(c).edit().putStringSet("disabled_apps", disabledApps(c) + pkg).apply()
     fun enableApp(c: Context, pkg: String) = prefs(c).edit().putStringSet("disabled_apps", disabledApps(c) - pkg).apply()

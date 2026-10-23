@@ -1,60 +1,17 @@
 {
-  "version": 3,
-  "note": "Model files in order of preference; the app uses the first one present and auto-downloads the first one that has URLs. Entries without URLs are not published yet (arrive by USB / import). Pinned URLs + sha256.",
+  "version": 4,
+  "note": "Model files in order of preference; the app uses the first one present and downloads the first one that has URLs. URLs are pinned to a Hugging Face revision and checked against sha256 after download.",
   "models": [
-    {
-      "id": "emojet-v3",
-      "file": "Emojet-v3-Q4_K_M.gguf",
-      "size": 273993056,
-      "sha256": "b255d653b913e4f873f9af3ebb0403873e6c98850ed11605a3ca8c76015dee78",
-      "label": "Emojet (slang blend, 4-bit, 274 MB)",
-      "urls": [],
-      "kind": "classifier"
-    },
-    {
-      "id": "emojet-v2round2",
-      "file": "Emojet-v2round2-Q4_K_M.gguf",
-      "size": 273993056,
-      "sha256": "ad9e0dcaf6e9a486b52000cfb040226aa029eed1e920bc9a1333400771c513e5",
-      "label": "Emojet (real-data + slang round 2, 4-bit, 274 MB)",
-      "urls": [],
-      "kind": "classifier"
-    },
-    {
-      "id": "emojet-v2",
-      "file": "Emojet-v2-Q4_K_M.gguf",
-      "size": 273993056,
-      "sha256": "8990fe9ca915755a732665c5732512210c6d2d260aa969b5319a6f110a592307",
-      "label": "Emojet (real-data model, 4-bit, 274 MB)",
-      "urls": [],
-      "kind": "classifier"
-    },
     {
       "id": "emojet-v1",
       "file": "Emojet-v1-Q4_K_M.gguf",
-      "size": 273977984,
-      "sha256": "acab7680ef30e73252df1c46b165c1f9ed1c144329c0c47fea9cd48b12b368e2",
-      "label": "Emojet-v1 (4-bit, 273 MB)",
-      "urls": [],
-      "kind": "classifier"
-    },
-    {
-      "id": "laya-q4_0",
-      "file": "Laya-Q4_0.gguf",
-      "size": 252225888,
-      "sha256": "14b4d697bdd5fdfa0ab920145526346435b41507f80a0341ab8181462fd06bfb",
-      "label": "Laya 4-bit (252 MB, fastest; not published yet)",
-      "urls": []
-    },
-    {
-      "id": "laya-q8_0",
-      "file": "Laya-Q8_0.gguf",
-      "size": 449397600,
-      "sha256": "c06528c5746d3bb8baa72a27938be95abbfd0b226f8471e8a9e365ed0bb066d2",
-      "label": "Laya 8-bit (449 MB, official ggml-org file)",
+      "size": 273993056,
+      "sha256": "b255d653b913e4f873f9af3ebb0403873e6c98850ed11605a3ca8c76015dee78",
+      "label": "Emojet v1 (4-bit, 274 MB)",
       "urls": [
-        "https://huggingface.co/ggml-org/Laya-GGUF/resolve/22265007700297ba9e128297e82540cf28c5d7d4/Laya-Q8_0.gguf"
-      ]
+        "https://huggingface.co/subhadeep3902/emojet/resolve/d77342b5fe181f13894fd93639f37d1eecb23df3/Emojet-v1-Q4_K_M.gguf"
+      ],
+      "kind": "classifier"
     }
   ]
 }

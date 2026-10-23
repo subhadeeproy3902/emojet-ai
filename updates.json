@@ -1,10 +1,14 @@
 {
-  "note": "Read by the app's and extension's 'Check for updates'. Bump app.versionCode + add apk {url, sha256, size} for a new APK; put a newer model list (shared/models.json format, higher version) under models to roll out a new model.",
+  "note": "Read by the app's 'Check for updates'. Bump app.versionCode and add apk {url, sha256, size} for a new APK; put a newer model list (shared/models.json format, higher version) under models to roll out a new model.",
   "app": {
-    "versionCode": 1,
-    "versionName": "0.1.0",
-    "notes": "First test build.",
-    "apk": null
+    "versionCode": 10,
+    "versionName": "1.0.0",
+    "notes": "First public release. Whole-sentence emoji suggestions in English, Hindi and Bengali, including Hinglish and Banglish.",
+    "apk": {
+      "url": "https://github.com/subhadeeproy3902/emojet-ai/releases/download/v1.0.0/emojet-v1.0.0-arm64.apk",
+      "sha256": "437c07d8295967ec3c6886997f88c92f57ef37e7a62dd235e8e6c392d8bd5fbf",
+      "size": 8151316
+    }
   },
   "models": null
 }

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Wrong emoji suggested
+    url: https://github.com/subhadeeproy3902/emojet/issues/new?template=bad_suggestion.yml
+    about: Which emoji the model picks is decided by the model — report those in the model repo.
+  - name: Model card, weights, llama.cpp
+    url: https://huggingface.co/subhadeep3902/emojet/discussions
+    about: Questions about running the model yourself.

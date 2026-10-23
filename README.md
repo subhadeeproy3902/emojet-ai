@@ -1,56 +1,198 @@
-<p align="center"><img src="assets/brand/emojet-logo-256.png" width="160" alt="EmoJet logo"></p>
+<div align="center">
 
-<h1 align="center">EmoJet</h1>
+<img src="assets/brand/emojet-logo-256.png" width="140" alt="EmoJet">
 
-Free, offline, real-time emoji suggestions while you type — as an overlay on Android (WhatsApp, Instagram, SMS, any app) and as a browser extension (WhatsApp Web, Instagram, Snapchat, Gmail, any site).
+# EmoJet
 
-The only AI inside is **[Laya](https://huggingface.co/convaiinnovations/laya)** — an open (Apache-2.0) decision model and the free alternative to the paid [Jev](https://github.com/colinmcdermott/emoji-jev) API that inspired this project. No API keys, no server, no account, no cost. Every suggestion is computed on your own device.
+**The right emoji, every time — while you type, in any app, with nothing leaving your phone.**
 
-## How it works (one paragraph)
+[![Download APK](https://img.shields.io/badge/download-APK_(arm64)-ffcc4d?logo=android&logoColor=white)](../../releases/latest)
+[![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?logo=android&logoColor=white)](#install-on-android)
+[![Size](https://img.shields.io/badge/app_8_MB_%2B_model_274_MB-282_MB_total-blue)](#how-much-space-it-takes)
+[![Model](https://img.shields.io/badge/%F0%9F%A4%97_model-Emojet_v1-ffcc4d)](https://huggingface.co/subhadeep3902/emojet)
+[![Licence](https://img.shields.io/badge/code-Apache--2.0-green)](LICENSE)
+[![Offline](https://img.shields.io/badge/works-fully_offline-lightgrey)](#privacy)
 
-Laya reads your draft (and the message you're replying to) and picks its **mood** from ~25 word labels — `laughing`, `grateful`, `tired`, `food` … — in a single forward pass. EmoJet turns the top moods into a row of 6 emojis ([`shared/moods.json`](shared/moods.json)). Asking Laya for emojis directly doesn't work (emojis are too many tokens for its option budget); moods do. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+[Install](#install-on-android) · [How it works](#how-it-works) · [Space](#how-much-space-it-takes) · [Privacy](#privacy) · [Desktop](#use-emojet-on-a-computer) · [Build it](#build-from-source-windows-macos-linux) · [Troubleshooting](#troubleshooting)
 
-## Status — Phase 0 (laptop) + Phase 1 (phone) done
+</div>
 
-| | Result (CPU, 4 threads) |
-|---|---|
-| Right mood first try / in top 3 | 18/23 · 22/23 |
-| Time per suggestion | ~183 ms laptop · **~306–356 ms on a REDMI Note 17 Pro 5G** (phone CPU, 4 threads) |
-| Model file | 252 MB (Laya, 4-bit Q4_0) |
-| Memory | ~265 MB |
-| Reply-aware | 3/3 reply cases right with context, 0/3 without |
+---
 
-Phase 1 (phone speed) passed. Next: Phase T — train **Emojet-v1**, a fine-tuned Laya that reads the whole message and scores all 1,923 distinct emojis of Unicode 18.0 (3,963 with skin tones) in one pass, plus the **tone of voice** (4 communication styles, 46 tones — sarcastic, passive-aggressive, empathetic, …) so emojis match how you're saying it ([docs/TRAINING.md](https://github.com/subhadeeproy3902/emojet/blob/main/docs/TRAINING.md)). Full roadmap: [docs/PLAN.md](docs/PLAN.md). What the owner has to do by hand: [docs/MANUAL-WORK.md](docs/MANUAL-WORK.md).
+You type in WhatsApp, Instagram, Messages — any app. You pause. A row of six emojis appears right above the
+keyboard, chosen from the **whole sentence**, not the last word. Tap one and it goes in.
 
-## Try the engine on a laptop
-
-Needs llama.cpp built from source (Laya support landed 2026-10-02) — see [docs/PLAN.md](docs/PLAN.md#prerequisites).
-
-```bash
-bash scripts/get-model.sh BF16 && bash scripts/quantize.sh Q4_0   # or just: bash scripts/get-model.sh  (449 MB Q8_0)
-bash scripts/dev-server.sh &
-python3 scripts/test-prompts.py
+```
+┌─────────────────────────────────────────────┐
+│  kal paper hai aur kuch nahi padha          │   ← what you typed (Hinglish)
+├─────────────────────────────────────────────┤
+│  ⠿   📚   😭   😩   😰   🤦   📖        ✕   │   ← EmoJet, right above the keyboard
+└─────────────────────────────────────────────┘
 ```
 
-## Distribution
+It understands **English, Hindi and Bengali**, including the way people really type — Hinglish and Banglish in
+English letters, native script, and the spelling variations in between.
 
-No app stores, on purpose (zero cost, zero review):
-- **Android**: APK from GitHub Releases, sideloaded.
-- **Browser**: zip from GitHub Releases → unzip → `chrome://extensions` → Developer mode → Load unpacked.
+Everything runs on the phone. No account, no server, no subscription, no ads, and after the one-time model
+download, no internet at all.
 
-## Docs
+## Install on Android
 
-| | |
+**Requirements:** Android 8.0 or newer, an arm64 phone (every phone since ~2017), ~282 MB free.
+
+1. **Download the APK** from the [latest release](../../releases/latest) — `emojet-v1.0.0-arm64.apk`.
+2. **Open it.** Android will ask to allow installing from this source; allow it for your browser or file manager.
+   (Chinese phones usually ask again inside MIUI/ColorOS — accept there too.)
+3. **Open EmoJet.** It explains what it does and what it needs, then walks you through three steps:
+   - **Download the model** — 274 MB once, over Wi-Fi, then it works offline forever.
+   - **Turn on Accessibility** for EmoJet — the only way Android lets an app read the box you are typing in.
+   - **Allow it to keep running** — a silent notification plus "no battery restrictions", so the phone does not
+     freeze it after a few days.
+4. **Type in any app**, pause, and tap an emoji.
+
+> **Xiaomi, Redmi and POCO owners:** also turn on **Autostart** for EmoJet (App info → Autostart). Without it HyperOS
+> stops EmoJet in the background after a few days and suggestions silently stop. The app's Help page has the steps.
+
+### Using the strip
+
+| Action | What happens |
 |---|---|
-| [PLAN](docs/PLAN.md) | phases, status, who does what |
-| [WORKFLOWS](docs/WORKFLOWS.md) | the big picture: making the model, installing, typing, in-app updates |
-| [ARCHITECTURE](docs/ARCHITECTURE.md) | how the Android app and extension work |
-| [TRAINING](https://github.com/subhadeeproy3902/emojet/blob/main/docs/TRAINING.md) | Emojet-v1: covering all emojis from the whole sentence |
-| [MANUAL-WORK](docs/MANUAL-WORK.md) | the owner's checklist (sudo, phone, accounts, decisions) |
-| [TESTING](docs/TESTING.md) | automatic tests + hands-on test manual |
-| [HUGGINGFACE](https://github.com/subhadeeproy3902/emojet/blob/main/docs/HUGGINGFACE.md) | what we need from Hugging Face (spoiler: no account) |
-| [RESEARCH](https://github.com/subhadeeproy3902/emojet/blob/main/docs/RESEARCH.md) | Jev vs Laya, experiments and numbers |
+| Tap an emoji | Inserted at the cursor |
+| **Hold** a person emoji (👋 🙏 👍) | Pick a skin tone — remembered from then on |
+| Empty box, after swipe-to-reply | You get emojis to react to *that* message |
+| Drag **⠿** | Move the strip if it covers something |
+| Tap **✕** | Hide it for this message; it returns with your next word |
+| **Hold ⠿** | Turn EmoJet off inside that one app |
 
-## License
+## How much space it takes
 
-MIT — see [`LICENSE`](LICENSE). Laya is Apache-2.0, llama.cpp is MIT — see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+Worth knowing before you start, because the model is the big part:
+
+| | Size | When |
+|---|---|---|
+| The app (APK) | **8 MB** | at install |
+| The Emojet model, 4-bit | **274 MB** | one download, over Wi-Fi |
+| **Total on the phone** | **~282 MB** | |
+| Memory while suggesting | ~300 MB | only while you are typing |
+
+The model is downloaded rather than bundled, so the APK stays small and the model can be updated without a new app
+version. It is checksummed (SHA-256) after download, and can also be
+[imported from a file](#no-wi-fi-or-want-to-move-the-model-by-usb) if you would rather not download it on the phone.
+
+## How it works
+
+EmoJet runs [**Emojet v1**](https://huggingface.co/subhadeep3902/emojet) — an open model (CC BY-NC-SA 4.0) built on
+[Laya](https://huggingface.co/convaiinnovations/laya) and fine-tuned on millions of real chat messages. One pass over
+your sentence scores every emoji in Unicode 18.0 plus the tone of voice, in about **0.4 seconds on a mid-range phone**.
+
+The app reads the text box through Android's accessibility service, runs the model **inside the app**
+(llama.cpp compiled for arm64), ranks the results, and draws the strip above your keyboard.
+
+Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · model and training:
+[subhadeeproy3902/emojet](https://github.com/subhadeeproy3902/emojet).
+
+## Privacy
+
+- **Nothing you type is stored, uploaded or shared.** There is no server to send it to.
+- EmoJet reads **only the text box you are typing in**, plus the message you are replying to.
+- It **never** reads password fields, and nothing else on your screen.
+- The internet is used **twice**: to download the model once, and when you tap "Check for updates".
+- No analytics, no crash reporting, no identifiers, no ads.
+
+Accessibility permission is powerful, which is exactly why the code that uses it is
+[public and readable](android/app/src/main/java/io/github/subhadeeproy3902/emojet/EmojetService.kt).
+
+## Use Emojet on a computer
+
+The Android app is the product; on Windows, macOS and Linux you can run the **same model** directly. It needs
+[llama.cpp](https://github.com/ggml-org/llama.cpp) and the 274 MB model file:
+
+```bash
+# any OS with llama.cpp installed
+huggingface-cli download subhadeep3902/emojet Emojet-v1-Q4_K_M.gguf --local-dir .
+llama-server -m Emojet-v1-Q4_K_M.gguf --embedding --pooling rank -c 512 --port 8080
+
+curl -s localhost:8080/embedding -H 'Content-Type: application/json' \
+  -d '{"content":"my message: kal paper hai aur kuch nahi padha","embd_normalize":-1}'
+```
+
+Or with Python on any OS — see the [model card](https://huggingface.co/subhadeep3902/emojet#quick-start).
+
+A browser extension (WhatsApp Web, Instagram, Gmail) is planned: [`extension/`](extension/). **iOS is not possible** —
+Apple does not allow an app to read other apps' text fields.
+
+## Build from source (Windows, macOS, Linux)
+
+```bash
+git clone https://github.com/subhadeeproy3902/emojet-ai && cd emojet-ai
+# needs JDK 17+ and the Android SDK (Android Studio installs both)
+bash scripts/build-android.sh debug      # macOS / Linux
+cd android && gradlew.bat assembleDebug  # Windows
+```
+
+The script also builds the llama.cpp engine for arm64 the first time, which takes a few minutes. The result lands in
+`android/app/build/outputs/apk/`. Details: [`scripts/README.md`](scripts/README.md).
+
+## Troubleshooting
+
+<details>
+<summary><b>Suggestions stopped appearing after a few days</b></summary>
+
+The phone froze EmoJet in the background. This is the most common problem, especially on Xiaomi/Redmi/POCO:
+
+1. Open EmoJet once — that alone restarts it.
+2. App info → **Battery** → No restrictions.
+3. Xiaomi/Redmi/POCO: App info → **Autostart** → on, and lock EmoJet in Recents (hold its card → lock).
+4. Check **Accessibility** is still switched on for EmoJet.
+
+The app's **Help** page shows the live state of all of these.
+</details>
+
+<details>
+<summary><b>The Accessibility switch is greyed out</b></summary>
+
+Android 13+ blocks accessibility for sideloaded apps until you allow it: App info → **⋮** (top right) →
+**Allow restricted settings**, then try again.
+</details>
+
+<details>
+<summary><b>No strip at all, in any app</b></summary>
+
+Check that Suggestions is on, that the app is not in the "Off in …" list (you can switch an app off by holding ⠿),
+and that the model finished downloading (Advanced names the model file it is using).
+</details>
+
+<details>
+<summary><b id="no-wi-fi-or-want-to-move-the-model-by-usb">No Wi-Fi, or you want to copy the model by USB</b></summary>
+
+Download [`Emojet-v1-Q4_K_M.gguf`](https://huggingface.co/subhadeep3902/emojet/blob/main/Emojet-v1-Q4_K_M.gguf) on a
+computer, copy it to the phone, then in EmoJet: **Advanced → Import a model file**. The file is accepted only if its
+checksum matches.
+</details>
+
+<details>
+<summary><b>A suggestion is plain wrong</b></summary>
+
+That is a model issue, and the most useful thing you can report — it becomes a permanent test case.
+Open a [bad suggestion report](https://github.com/subhadeeproy3902/emojet/issues/new?template=bad_suggestion.yml)
+with the message you typed and what a real person would have sent.
+</details>
+
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Anything about **which emoji is
+suggested** belongs in the [model repo](https://github.com/subhadeeproy3902/emojet), where you can also retrain the
+model yourself on free hardware.
+
+## Licence
+
+- **App code** (this repo): [Apache-2.0](LICENSE).
+- **Emojet model weights**: CC BY-NC-SA 4.0 — free and open, non-commercial
+  ([model card](https://huggingface.co/subhadeep3902/emojet)).
+- Third-party components and their licences: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+<div align="center">
+
+**[Download the APK →](../../releases/latest)** · [The model →](https://huggingface.co/subhadeep3902/emojet)
+
+</div>

@@ -94,6 +94,11 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!Prefs.onboarded(this)) {                 // first run: explain before asking for anything
+            startActivity(Intent(this, OnboardingActivity::class.java))
+            finish()
+            return
+        }
         Theme.init(this)
         models = ModelManager(this)
         updates = UpdateManager(this)
@@ -115,7 +120,8 @@ class MainActivity : Activity() {
         col.addView(updatesCard(), lp(top = 16))
         col.addView(privacyCard(), lp(top = 16))
         col.addView(advancedCard(), lp(top = 16))
-        col.addView(Theme.caption(this, "EmoJet ${versionName()} · free and open source").apply { gravity = Gravity.CENTER }, lp(top = 28))
+        col.addView(Theme.caption(this, "EmoJet ${versionName()} · runs entirely on this phone · powered by the Emojet model")
+            .apply { gravity = Gravity.CENTER }, lp(top = 28))
 
         // Edge-to-edge (Android 15+): a solid paper band behind the status bar, content scrolls below it.
         val scroll = ScrollView(this).apply {
@@ -215,6 +221,9 @@ class MainActivity : Activity() {
         }
         step1.actions.addView(progress, LinearLayout.LayoutParams(-1, dp(context, 6)).apply { topMargin = dp(context, 12) })
         progressText = Theme.caption(context, "").also { step1.actions.addView(it, lp(top = 6)) }
+        val mb = (models.downloadSizeBytes() / 1_000_000).toInt()
+        if (mb > 0) step1.actions.addView(Theme.caption(context,
+            "$mb MB once, over Wi-Fi. After that EmoJet works offline, with no further downloads."), lp(top = 8))
         retryBtn = Theme.primaryButton(context, "Try again") { models.startDownload(false); refresh() }
         mobileBtn = Theme.secondaryButton(context, "Use mobile data instead") { models.allowMobileDataNow(); refresh() }
         step1.actions.addView(retryBtn, lp(top = 12))
@@ -226,7 +235,9 @@ class MainActivity : Activity() {
         step2.actions.addView(Theme.primaryButton(context, "Open Accessibility") {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }, lp(top = 14))
-        step2.actions.addView(Theme.caption(context, "Find EmoJet under Downloaded apps. Greyed out? Open App info, tap ⋮ in the corner, then Allow restricted settings."), lp(top = 10))
+        step2.actions.addView(Theme.caption(context,
+            "Find EmoJet under Downloaded apps (or Installed apps) and switch it on.\n" +
+            "Greyed out? Open App info, tap ⋮ in the top corner, then “Allow restricted settings”."), lp(top = 10))
         step2.actions.addView(Theme.secondaryButton(context, "App info") { openAppInfo() }, lp(top = 10))
         addView(step2.view)
         addView(Theme.hairline(context))
@@ -433,13 +444,33 @@ class MainActivity : Activity() {
 
     private fun isXiaomi() = Build.MANUFACTURER.lowercase() in setOf("xiaomi", "redmi", "poco")
 
+    override fun onRequestPermissionsResult(code: Int, perms: Array<out String>, results: IntArray) {
+        super.onRequestPermissionsResult(code, perms, results)
+        if (code == 2 && results.firstOrNull() != PackageManager.PERMISSION_GRANTED) {
+            toast("Without the notification EmoJet gets stopped in the background. You can turn it on any time.")
+        }
+        refresh()
+    }
+
+    private fun toast(s: String) = android.widget.Toast.makeText(this, s, android.widget.Toast.LENGTH_LONG).show()
+
     private fun versionName() = packageManager.getPackageInfo(packageName, 0).versionName
 
     private fun openAppInfo() = startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
 
     private fun askKeepRunning() {
         if (!notificationsOk() && Build.VERSION.SDK_INT >= 33) {
-            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2)
+            // Android stops showing the dialog after two refusals; then only the settings page works
+            val dialogIsDead = Prefs.notifAsks(this) >= 2 &&
+                !shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)
+            if (dialogIsDead) {
+                toast("Turn Notifications on for EmoJet here")
+                startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+            } else {
+                Prefs.countNotifAsk(this)
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 2)
+            }
             return
         }
         if (!backgroundOk()) {

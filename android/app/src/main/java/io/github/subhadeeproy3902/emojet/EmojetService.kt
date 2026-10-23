@@ -119,9 +119,11 @@ class EmojetService : AccessibilityService() {
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
-        hide()
+        // Android can stop the service before onServiceConnected ran (reinstall, upgrade, quick toggle):
+        // the lateinit fields are not set yet, and touching them used to crash the app.
+        if (::wm.isInitialized) hide()
         worker.shutdownNow()
-        engine.stop()
+        if (::engine.isInitialized) runCatching { engine.stop() }
         super.onDestroy()
     }
 
@@ -447,7 +449,7 @@ class EmojetService : AccessibilityService() {
         pending?.let(main::removeCallbacks)
         generation++
         shownFor = null
-        strip?.let { if (it.parent != null) wm.removeView(it) }
+        strip?.let { if (it.parent != null) runCatching { wm.removeView(it) } }
         strip = null
         row = null
     }

@@ -1,0 +1,53 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    paths: ["android/**", "shared/**", ".github/workflows/android.yml"]
+  pull_request:
+    paths: ["android/**", "shared/**"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Shared assets are valid JSON and consistent
+        run: |
+          python3 - <<'PY'
+          import json, pathlib
+          models = json.loads(pathlib.Path("shared/models.json").read_text(encoding="utf-8"))
+          seen = set()
+          for m in models["models"]:
+              for k in ("id", "file", "size", "sha256", "label", "urls", "kind"):
+                  assert k in m, f"{m.get('id')} is missing {k}"
+              assert len(m["sha256"]) == 64, f"{m['id']} has a bad sha256"
+              assert m["id"] not in seen, f"duplicate model id {m['id']}"
+              seen.add(m["id"])
+          tones = json.loads(pathlib.Path("shared/tones.json").read_text(encoding="utf-8"))
+          cat = json.loads(pathlib.Path("shared/emoji-catalog.json").read_text(encoding="utf-8"))
+          n = len(cat["emojis"]) + len(tones["tones"]) + len(tones["styles"]["options"]) + \
+              len([k for k in tones["dimensions"] if k != "note"])
+          print(f"{len(models['models'])} model entries; label layout = {n} outputs")
+          PY
+
+      # The llama.cpp engine (libllama_server.so) is built by scripts/build-android.sh and is not in git,
+      # so this APK compiles but cannot run the model. It exists to catch Kotlin and resource breakage in PRs.
+      - name: Build the app
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emojet-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn

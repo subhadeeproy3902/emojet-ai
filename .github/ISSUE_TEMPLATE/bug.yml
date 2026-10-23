@@ -1,0 +1,62 @@
+name: Bug in the app
+description: A crash, the strip not appearing, permissions, installing, battery
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If suggestions **stopped after a few days**, the phone most likely froze EmoJet in the background —
+        the Help page inside the app and the README's troubleshooting section fix that in a minute.
+        If the strip appears but suggests the **wrong emoji**, that belongs in the
+        [model repo](https://github.com/subhadeeproy3902/emojet/issues/new?template=bad_suggestion.yml).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce it
+      placeholder: |
+        1. Open WhatsApp
+        2. Type "..."
+        3. Wait a second
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and Android version
+      placeholder: Redmi Note 13, Android 14 (HyperOS 1.0)
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: EmoJet version
+      description: Shown at the bottom of the home screen.
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where does it happen
+      multiple: true
+      options:
+        - WhatsApp
+        - Instagram
+        - Messages / SMS
+        - Telegram
+        - Gmail
+        - Every app
+        - Inside EmoJet itself
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, if you can get them
+      description: "`adb logcat -s EmoJet AndroidRuntime` while reproducing it. Optional."
+      render: text

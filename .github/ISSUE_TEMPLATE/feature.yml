@@ -1,0 +1,25 @@
+name: Idea or feature request
+description: Something EmoJet should do differently
+title: "Idea: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What should it do
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why — what are you doing when you want this
+      description: The situation matters more than the solution; it often suggests a simpler one.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: This is about
+      options:
+        - label: The app (strip, settings, permissions, onboarding)
+        - label: The model (which emoji it picks) — if so, the model repo is the right place
