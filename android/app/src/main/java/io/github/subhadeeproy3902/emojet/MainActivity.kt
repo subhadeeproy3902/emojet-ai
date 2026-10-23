@@ -232,13 +232,30 @@ class MainActivity : Activity() {
         addView(Theme.hairline(context))
 
         step2 = Step(2, "Turn on EmoJet")
-        step2.actions.addView(Theme.primaryButton(context, "Open Accessibility") {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }, lp(top = 14))
+        // Android 13+ puts accessibility behind "restricted settings" for every app installed outside an app
+        // store, so a sideloaded EmoJet ALWAYS hits "App was denied access" first. Say so before it happens.
+        if (Build.VERSION.SDK_INT >= 33) {
+            step2.actions.addView(Theme.label(context, "First: allow restricted settings", Theme.ACCENT), lp(top = 14))
+            step2.actions.addView(Theme.secondaryText(context,
+                "Android blocks this switch for apps installed outside the Play Store. Without this, Accessibility " +
+                "shows “App was denied access”."), lp(top = 4))
+            step2.actions.addView(Theme.caption(context,
+                "1.  Open App info below\n" +
+                "2.  Tap ⋮ in the top-right corner\n" +
+                "3.  Tap “Allow restricted settings”"), lp(top = 8))
+            step2.actions.addView(Theme.primaryButton(context, "Open App info") { openAppInfo() }, lp(top = 10))
+            step2.actions.addView(Theme.label(context, "Then: switch EmoJet on"), lp(top = 18))
+            step2.actions.addView(Theme.secondaryButton(context, "Open Accessibility") {
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }, lp(top = 8))
+        } else {
+            step2.actions.addView(Theme.primaryButton(context, "Open Accessibility") {
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }, lp(top = 14))
+            step2.actions.addView(Theme.secondaryButton(context, "App info") { openAppInfo() }, lp(top = 10))
+        }
         step2.actions.addView(Theme.caption(context,
-            "Find EmoJet under Downloaded apps (or Installed apps) and switch it on.\n" +
-            "Greyed out? Open App info, tap ⋮ in the top corner, then “Allow restricted settings”."), lp(top = 10))
-        step2.actions.addView(Theme.secondaryButton(context, "App info") { openAppInfo() }, lp(top = 10))
+            "In Accessibility, find EmoJet under Downloaded apps (or Installed apps) and switch it on."), lp(top = 10))
         addView(step2.view)
         addView(Theme.hairline(context))
 

@@ -41,8 +41,21 @@ On Xiaomi, Redmi, POCO, Oppo and Vivo phones a second confirmation appears from 
 | | | |
 |---|---|---|
 | **1** | **Download the model** | 274 MB, once. Wi-Fi or mobile data — your choice. After this EmoJet works offline forever. |
-| **2** | **Turn on Accessibility** | Settings opens; find EmoJet under *Downloaded apps* and switch it on. Greyed out? App info → **⋮** → *Allow restricted settings*, then try again. |
+| **2** | **Turn on Accessibility** | See the box below first — Android blocks this switch for sideloaded apps. |
 | **3** | **Keep it running** | A silent notification plus "no battery restrictions", so your phone does not freeze EmoJet after a few days. |
+
+### "App was denied access" / "Controlled by restricted setting"
+
+**Every app installed outside the Play Store hits this on Android 13 and newer.** Android hides the accessibility
+switch until you unlock it, once, per app:
+
+1. Settings → **Apps** → **Manage apps** → **EmoJet**  *(or use the "Open App info" button inside EmoJet)*
+2. Tap the **⋮** in the top-right corner
+3. Tap **"Allow restricted settings"**
+4. Go back to Accessibility → EmoJet → the switch works now
+
+This exists because accessibility is a powerful permission, and Android wants you to have walked to the app's own
+settings page deliberately before granting it to something that did not come from a store. It is a one-time step.
 
 ## Step 5 — Xiaomi, Redmi and POCO only
 

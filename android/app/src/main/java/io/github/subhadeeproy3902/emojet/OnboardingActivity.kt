@@ -151,7 +151,8 @@ class OnboardingActivity : Activity() {
         val mb = (models.downloadSizeBytes() / 1_000_000).toInt()
         addView(sizeCard(mb), lp(top = 16))
         for ((title, detail) in listOf(
-            "Accessibility" to "The only way Android lets an app read the box you are typing in. EmoJet uses nothing else from it.",
+            "Accessibility" to "The only way Android lets an app read the box you are typing in. EmoJet uses nothing else from it. " +
+                "Android will say “App was denied access” the first time — the next screen shows the two taps that fix it.",
             "Notifications" to "One silent notification while EmoJet is on, which is what keeps Android from stopping it.",
             "Battery: no restrictions" to "Otherwise the phone pauses EmoJet after a few days and suggestions quietly stop.",
         )) addView(step("•", title, detail), lp(top = 16))
