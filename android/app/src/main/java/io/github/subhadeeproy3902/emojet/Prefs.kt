@@ -23,6 +23,11 @@ object Prefs {
     fun skinTone(c: Context): Int = prefs(c).getInt("skin_tone", 0)
     fun setSkinTone(c: Context, tone: Int) = prefs(c).edit().putInt("skin_tone", tone).apply()
 
+    /** Restrict the one-time model download to Wi-Fi. Off by default: mobile data works too, and being
+     *  told to "wait for Wi-Fi" when you have 5G is just an app getting in the way. */
+    fun wifiOnly(c: Context): Boolean = prefs(c).getBoolean("wifi_only", false)
+    fun setWifiOnly(c: Context, on: Boolean) = prefs(c).edit().putBoolean("wifi_only", on).apply()
+
     /** First run finished (OnboardingActivity). */
     fun onboarded(c: Context): Boolean = prefs(c).getBoolean("onboarded", false)
     fun setOnboarded(c: Context, v: Boolean) = prefs(c).edit().putBoolean("onboarded", v).apply()

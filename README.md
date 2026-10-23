@@ -13,6 +13,11 @@
 [![Licence](https://img.shields.io/badge/code-Apache--2.0-green)](LICENSE)
 [![Offline](https://img.shields.io/badge/works-fully_offline-lightgrey)](#privacy)
 
+### ⚠️ Installing in India, Brazil, Singapore, Thailand, Vietnam, the Philippines, Hong Kong, Kenya, Nigeria or South Africa?
+
+Android will block the install with *"App blocked to protect your device"*. It does that to **every** sideloaded
+app that uses the accessibility permission. Four taps get past it — **[step-by-step guide →](INSTALL.md)**
+
 [Install](#install-on-android) · [How it works](#how-it-works) · [Space](#how-much-space-it-takes) · [Privacy](#privacy) · [Desktop](#use-emojet-on-a-computer) · [Build it](#build-from-source-windows-macos-linux) · [Troubleshooting](#troubleshooting)
 
 </div>

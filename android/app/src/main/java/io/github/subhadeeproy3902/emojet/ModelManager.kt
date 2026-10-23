@@ -84,16 +84,26 @@ class ModelManager(context: Context) {
         }
     }
 
-    /** First launch: start the download by itself (Wi-Fi only) unless it already ran or a model is present. */
+    /** First launch: start the download by itself unless it already ran or a model is present. */
     fun autoStartOnce(): Boolean {
         if (prefs.getBoolean("auto_started", false) || installed() != null || prefs.contains("id")) return false
         prefs.edit().putBoolean("auto_started", true).apply()
-        startDownload(allowMobileData = false)
+        startDownload(allowMobileData = !Prefs.wifiOnly(app))
+        return true
+    }
+
+    /** A download parked on "waiting for Wi-Fi" while the user is happy to use mobile data: restart it.
+     *  Happens after an upgrade from a build that was Wi-Fi-only, or when the setting is switched off. */
+    fun resumeIfWaitingForWifi(): Boolean {
+        if (Prefs.wifiOnly(app)) return false
+        if ((poll() as? State.Downloading)?.waiting != "waiting for Wi-Fi") return false
+        allowMobileDataNow()
         return true
     }
 
     /** "Use mobile data now": restart the waiting download with mobile data allowed. */
     fun allowMobileDataNow() {
+        Prefs.setWifiOnly(app, false)
         cancel()
         startDownload(allowMobileData = true)
     }

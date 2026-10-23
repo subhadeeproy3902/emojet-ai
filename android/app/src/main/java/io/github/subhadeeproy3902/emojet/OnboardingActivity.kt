@@ -167,7 +167,7 @@ class OnboardingActivity : Activity() {
             .let { java.io.File(it).length() } / 1_000_000).toInt().coerceAtLeast(1)
         addView(row("This app", "$apkMb MB — already installed"), lp(top = 12))
         addView(Theme.hairline(context))
-        addView(row("The model, once", "$modelMb MB — over Wi-Fi, then it works offline"), lp(top = 4))
+        addView(row("The model, once", "$modelMb MB — Wi-Fi or mobile data, then it works offline"), lp(top = 4))
         addView(Theme.hairline(context))
         addView(row("Total on your phone", "about ${apkMb + modelMb} MB"), lp(top = 4))
     }

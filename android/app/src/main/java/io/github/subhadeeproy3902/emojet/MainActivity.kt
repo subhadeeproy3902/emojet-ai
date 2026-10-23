@@ -223,7 +223,7 @@ class MainActivity : Activity() {
         progressText = Theme.caption(context, "").also { step1.actions.addView(it, lp(top = 6)) }
         val mb = (models.downloadSizeBytes() / 1_000_000).toInt()
         if (mb > 0) step1.actions.addView(Theme.caption(context,
-            "$mb MB once, over Wi-Fi. After that EmoJet works offline, with no further downloads."), lp(top = 8))
+            "$mb MB once, over Wi-Fi or mobile data. After that EmoJet works offline, with no further downloads."), lp(top = 8))
         retryBtn = Theme.primaryButton(context, "Try again") { models.startDownload(false); refresh() }
         mobileBtn = Theme.secondaryButton(context, "Use mobile data instead") { models.allowMobileDataNow(); refresh() }
         step1.actions.addView(retryBtn, lp(top = 12))
@@ -283,6 +283,13 @@ class MainActivity : Activity() {
         }
         addView(row("Pause for an hour", pauseSub, pauseAction))
         addView(Theme.hairline(context))
+        addView(row("Download over Wi-Fi only", "Off: the one-time model download uses mobile data too",
+            Theme.switch(context, Prefs.wifiOnly(context)) { on ->
+                Prefs.setWifiOnly(context, on)
+                if (!on) models.resumeIfWaitingForWifi()
+                refresh()
+            }))
+        addView(Theme.hairline(context))
         addView(row("Strip position", "Back to just above the text box", action("Reset") {
             Prefs.resetStripOffsets(context)
             testResult.text = "Strip position reset."
@@ -339,6 +346,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         models.autoStartOnce()           // notifications are asked for in step 3, with context
+        models.resumeIfWaitingForWifi()  // upgraded from a Wi-Fi-only build, or the setting was switched off
         main.post(ticker)
     }
 
@@ -376,7 +384,7 @@ class MainActivity : Activity() {
             is ModelManager.State.Failed -> "Couldn't finish the download. Check your connection."
             is ModelManager.State.Verifying -> "Almost there…"
             is ModelManager.State.Downloading ->
-                if (state.waiting == "waiting for Wi-Fi") "Waiting for Wi-Fi. One-time download, then it works offline."
+                if (state.waiting == "waiting for Wi-Fi") "Waiting for Wi-Fi — tap below to use mobile data instead."
                 else "One-time download, then it works offline. You can leave the app."
             is ModelManager.State.Missing -> "One-time download, then it works offline."
         })
