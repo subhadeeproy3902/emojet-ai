@@ -41,10 +41,12 @@ download, no internet at all.
 **Requirements:** Android 8.0 or newer, an arm64 phone (every phone since ~2017), ~282 MB free.
 
 1. **Download the APK** from the [latest release](../../releases/latest) — `emojet-v1.0.0-arm64.apk`.
-2. **Let Play Protect through — this step is required.** Android blocks *every* sideloaded app that uses the
-   accessibility permission, with a red "App blocked to protect your device" dialog. See
-   [why, and what to do](#why-android-blocks-the-install) right below. In short: Play Store → your profile picture →
+2. **In some countries, let Play Protect through first.** In India, Brazil, Singapore, Thailand, Vietnam, the
+   Philippines, Indonesia-region pilots, Hong Kong, Kenya, Nigeria and South Africa, Android blocks *every*
+   sideloaded app that uses the accessibility permission with an "App blocked to protect your device" dialog.
+   Everywhere else it installs normally — skip to step 3. If you see the dialog: Play Store → your profile picture →
    **Play Protect** → **⚙** → turn **off** "Scan apps with Play Protect", install, then turn it back on.
+   ([Why?](#why-android-blocks-the-install))
 3. **Open it.** Android asks to allow installing from this source; allow it for your browser or file manager.
    (Chinese phones usually ask again inside MIUI/ColorOS — accept there too.)
 4. **Open EmoJet.** It explains what it does and what it needs, then walks you through three steps:
@@ -57,10 +59,19 @@ download, no internet at all.
 ### Why Android blocks the install
 
 EmoJet needs Android's **accessibility permission**, because it is the only way Android lets an app read the text
-box you are typing in. That same permission is what banking-fraud malware abuses, so Google Play Protect
+box you are typing in. That same permission is what banking trojans abuse — they use it to read one-time codes off
+the screen and tap "confirm" on transfers — so Google Play Protect
 [automatically blocks any app that declares it](https://developers.google.com/android/play-protect/warning-dev-guidance)
-when it is installed from a browser, messaging app or file manager. The dialog mentions "identity theft or financial
-fraud" — that is a blanket warning about the permission, not something Google found in this app.
+when it is installed from a browser, messaging app or file manager.
+
+The dialog mentions "identity theft or financial fraud" because **that text is shown for every app with this
+permission**. Play Protect only reads the permission list before installing; it has not examined what EmoJet does
+with it, and has not found anything in this app. The warning is about what the permission *could* allow, which is a
+fair thing to warn about — EmoJet's answer is that the code using it is public and the model never leaves your phone.
+
+This is a [pilot Google runs in about ten countries](https://blog.google/security/how-we-kept-google-play-android-app-ecosystem-safe-2024/)
+(India, Brazil, Singapore, Thailand, Vietnam, the Philippines, Hong Kong, Kenya, Nigeria, South Africa). In the rest
+of the world the APK installs with no block.
 
 There is no "Install anyway" button, and installing from F-Droid or Obtainium does not avoid it either. Your options:
 
