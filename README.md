@@ -41,14 +41,37 @@ download, no internet at all.
 **Requirements:** Android 8.0 or newer, an arm64 phone (every phone since ~2017), ~282 MB free.
 
 1. **Download the APK** from the [latest release](../../releases/latest) — `emojet-v1.0.0-arm64.apk`.
-2. **Open it.** Android will ask to allow installing from this source; allow it for your browser or file manager.
+2. **Let Play Protect through — this step is required.** Android blocks *every* sideloaded app that uses the
+   accessibility permission, with a red "App blocked to protect your device" dialog. See
+   [why, and what to do](#why-android-blocks-the-install) right below. In short: Play Store → your profile picture →
+   **Play Protect** → **⚙** → turn **off** "Scan apps with Play Protect", install, then turn it back on.
+3. **Open it.** Android asks to allow installing from this source; allow it for your browser or file manager.
    (Chinese phones usually ask again inside MIUI/ColorOS — accept there too.)
-3. **Open EmoJet.** It explains what it does and what it needs, then walks you through three steps:
+4. **Open EmoJet.** It explains what it does and what it needs, then walks you through three steps:
    - **Download the model** — 274 MB once, over Wi-Fi, then it works offline forever.
    - **Turn on Accessibility** for EmoJet — the only way Android lets an app read the box you are typing in.
    - **Allow it to keep running** — a silent notification plus "no battery restrictions", so the phone does not
      freeze it after a few days.
-4. **Type in any app**, pause, and tap an emoji.
+5. **Type in any app**, pause, and tap an emoji.
+
+### Why Android blocks the install
+
+EmoJet needs Android's **accessibility permission**, because it is the only way Android lets an app read the text
+box you are typing in. That same permission is what banking-fraud malware abuses, so Google Play Protect
+[automatically blocks any app that declares it](https://developers.google.com/android/play-protect/warning-dev-guidance)
+when it is installed from a browser, messaging app or file manager. The dialog mentions "identity theft or financial
+fraud" — that is a blanket warning about the permission, not something Google found in this app.
+
+There is no "Install anyway" button, and installing from F-Droid or Obtainium does not avoid it either. Your options:
+
+| | |
+|---|---|
+| **Pause Play Protect** (easiest) | Play Store → profile picture → Play Protect → **⚙** → turn off "Scan apps with Play Protect" → install → **turn it back on**. The app keeps working. |
+| **Install over USB** | `adb install emojet-v1.0.0-arm64.apk` from a computer — ADB installs are not blocked. |
+
+If you would rather not do either, that is a completely reasonable decision — an app that reads your text boxes
+deserves that scepticism. Every line of what it does with that permission is
+[readable here](android/app/src/main/java/io/github/subhadeeproy3902/emojet/EmojetService.kt).
 
 > **Xiaomi, Redmi and POCO owners:** also turn on **Autostart** for EmoJet (App info → Autostart). Without it HyperOS
 > stops EmoJet in the background after a few days and suggestions silently stop. The app's Help page has the steps.
