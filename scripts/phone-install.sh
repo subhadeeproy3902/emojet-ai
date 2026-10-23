@@ -23,7 +23,7 @@ adb install -r "$APK" | tail -1
 adb shell mkdir -p "$DEST"
 files=("$@")
 if [[ ${#files[@]} -eq 0 ]]; then
-  for f in "$MODELS"/Emojet-v2round2-Q4_K_M.gguf; do [[ -f "$f" ]] && files+=("$f"); done
+  for f in "$MODELS"/Emojet-v3-Q4_K_M.gguf; do [[ -f "$f" ]] && files+=("$f"); done
 fi
 for f in "${files[@]}"; do
   name=$(basename "$f")

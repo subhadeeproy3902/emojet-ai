@@ -105,6 +105,9 @@ class Ranker(context: Context) {
             .forEach { adj[it] += TOPIC_BONUS }
         lastTones = (0 until nt).map { Tone(tones[it], toneP[it]) }.sortedByDescending { it.p }.take(3)
         lastStyle = styles[(0 until styles.size).maxBy { s[ne + nt + it] }]
+        // never offer 🖕🤬 on a message the model does not read as rude/angry itself
+        val angry = (0 until nt).filter { tones[it] in ANGRY_TONES }.maxOfOrNull { toneP[it] } ?: 0f
+        if (angry < OFFENSIVE_MIN) for (i in 0 until ne) if (emojis[i] in OFFENSIVE) adj[i] = Float.NEGATIVE_INFINITY
         return (0 until ne).sortedByDescending { adj[it] }.take(n).map { emojis[it] }
     }
 
@@ -143,6 +146,10 @@ class Ranker(context: Context) {
             "person-resting", "family", "zodiac", "religion", "warning", "transport-sign")
         private val VIBE = setOf("🎉", "🎊", "✨", "🔥", "💥", "⭐", "🌟", "💫", "⚡", "🌈", "🎈", "🎆", "🎇", "🪩")
         private val SKIP_TONE_BOOST = setOf("neutral", "friendly")
+        // kept out of ordinary messages; shown only when the message itself scores rude/angry (see classifier())
+        private val OFFENSIVE = setOf("🖕", "🤬", "🤮", "🤢", "🍆", "🍑", "👿")
+        private val ANGRY_TONES = setOf("rude", "aggressive", "angry", "derisive")
+        private const val OFFENSIVE_MIN = 0.5f
         private const val TOPIC_WINDOW = 4.5f
         private const val TOPIC_BONUS = 1.6f
         private const val MAX_TOPIC = 3
