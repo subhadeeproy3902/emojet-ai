@@ -1,5 +1,9 @@
 # Manual work — what only you can do
 
+> **Historical.** This is a working document from the build of EmoJet v1, kept for context. It describes
+> plans and processes, not the shipped design — for that see [ARCHITECTURE.md](ARCHITECTURE.md),
+> [../README.md](../README.md) and [../INSTALL.md](../INSTALL.md).
+
 Claude does all the coding, building, local installs in your home folder, testing on the laptop, commits and pushes. What's left is in this file: things that need your **password (sudo)**, your **phone**, your **accounts**, or **your taste**. Tick them off as you go and tell Claude.
 
 ## ★ Before the next build session — do these, in this order

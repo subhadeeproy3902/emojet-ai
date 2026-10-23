@@ -1,5 +1,9 @@
 # EmoJet — Plan
 
+> **Historical.** This is a working document from the build of EmoJet v1, kept for context. It describes
+> plans and processes, not the shipped design — for that see [ARCHITECTURE.md](ARCHITECTURE.md),
+> [../README.md](../README.md) and [../INSTALL.md](../INSTALL.md).
+
 **Goal:** free, fully on-device emoji suggestions while you type — an overlay on Android (WhatsApp, Instagram, SMS, any app) and a browser extension (WhatsApp Web, Instagram, Snapchat, any site). The only AI is **Laya**. Distributed as an APK and an unpacked extension zip on GitHub Releases. **$0** to build, host and run.
 
 Related docs: [ARCHITECTURE](ARCHITECTURE.md) · [TRAINING](https://github.com/subhadeeproy3902/emojet/blob/main/docs/TRAINING.md) · [MANUAL-WORK](MANUAL-WORK.md) (your checklist) · [TESTING](TESTING.md) · [HUGGINGFACE](https://github.com/subhadeeproy3902/emojet/blob/main/docs/HUGGINGFACE.md) · [RESEARCH](https://github.com/subhadeeproy3902/emojet/blob/main/docs/RESEARCH.md)

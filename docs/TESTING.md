@@ -1,5 +1,9 @@
 # Test manual
 
+> **Historical.** This is a working document from the build of EmoJet v1, kept for context. It describes
+> plans and processes, not the shipped design — for that see [ARCHITECTURE.md](ARCHITECTURE.md),
+> [../README.md](../README.md) and [../INSTALL.md](../INSTALL.md).
+
 Two kinds of tests: **automatic** ones Claude runs on the laptop after every change, and **hands-on** ones that need your phone, your browser and your judgement. Each phase ends only when both pass.
 
 ## 1. Automatic tests (Claude)

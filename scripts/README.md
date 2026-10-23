@@ -1,6 +1,7 @@
 # Scripts
 
-E: is mounted without the exec bit, so run everything through `bash` / `python3`.
+Run these through `bash` / `python3` (some file systems drop the executable bit, so `./script.sh`
+is not reliable).
 
 | Script | What it does |
 |---|---|

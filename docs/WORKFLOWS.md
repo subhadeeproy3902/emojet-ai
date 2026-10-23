@@ -1,5 +1,9 @@
 # Workflows
 
+> **Historical.** This is a working document from the build of EmoJet v1, kept for context. It describes
+> plans and processes, not the shipped design — for that see [ARCHITECTURE.md](ARCHITECTURE.md),
+> [../README.md](../README.md) and [../INSTALL.md](../INSTALL.md).
+
 The big picture in plain words: how the model is made, how people install EmoJet, what happens when they type, and how updates arrive **without uninstalling anything**. Component details: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Making the model ≠ running the model
