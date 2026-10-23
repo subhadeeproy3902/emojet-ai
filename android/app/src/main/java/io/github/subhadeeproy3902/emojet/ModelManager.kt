@@ -92,11 +92,19 @@ class ModelManager(context: Context) {
         return true
     }
 
-    /** A download parked on "waiting for Wi-Fi" while the user is happy to use mobile data: restart it.
-     *  Happens after an upgrade from a build that was Wi-Fi-only, or when the setting is switched off. */
+    /** A download that cannot finish because it was queued Wi-Fi-only, while the user is happy to use mobile
+     *  data: start it again with metered connections allowed. Happens after upgrading from a Wi-Fi-only build,
+     *  or when the setting is switched off.
+     *
+     *  Android does not always report such a download as PAUSED_QUEUED_FOR_WIFI — it can simply sit at 0 %
+     *  as "pending" — so going by that state alone left downloads stuck forever. What is reliable is how the
+     *  request itself was queued: `mobile = false`. A download that is genuinely making progress (over Wi-Fi)
+     *  is left alone, so nothing already fetched is thrown away. */
     fun resumeIfWaitingForWifi(): Boolean {
         if (Prefs.wifiOnly(app)) return false
-        if ((poll() as? State.Downloading)?.waiting != "waiting for Wi-Fi") return false
+        if (!prefs.contains("id") || prefs.getBoolean("mobile", false)) return false
+        val state = poll() as? State.Downloading ?: return false
+        if (state.done > 0 && state.waiting == null) return false      // downloading fine, do not restart
         allowMobileDataNow()
         return true
     }
