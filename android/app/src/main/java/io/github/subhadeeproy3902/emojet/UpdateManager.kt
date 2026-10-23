@@ -26,6 +26,8 @@ class UpdateManager(context: Context) {
     data class Info(
         val appNewer: Boolean, val versionName: String, val notes: String,
         val apkUrl: String?, val apkSha256: String?, val modelsNewer: Boolean,
+        /** Build numbers, so a newer build of the same version name is not announced as "1.0.0 is available". */
+        val versionCode: Long = 0, val installedVersionCode: Long = 0, val installedVersionName: String = "",
     )
 
     private val app = context.applicationContext
@@ -57,6 +59,9 @@ class UpdateManager(context: Context) {
             notes = a.optString("notes"),
             apkUrl = apk?.optString("url"), apkSha256 = apk?.optString("sha256"),
             modelsNewer = modelsNewer,
+            versionCode = a.getLong("versionCode"),
+            installedVersionCode = installed,
+            installedVersionName = app.packageManager.getPackageInfo(app.packageName, 0).versionName ?: "",
         )
     }
 

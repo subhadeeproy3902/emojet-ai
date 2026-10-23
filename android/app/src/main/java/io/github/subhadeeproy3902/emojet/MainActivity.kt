@@ -120,7 +120,7 @@ class MainActivity : Activity() {
         col.addView(updatesCard(), lp(top = 16))
         col.addView(privacyCard(), lp(top = 16))
         col.addView(advancedCard(), lp(top = 16))
-        col.addView(Theme.caption(this, "EmoJet ${versionName()} · runs entirely on this phone · powered by the Emojet model")
+        col.addView(Theme.caption(this, "EmoJet ${versionName()} (build ${versionCode()}) · runs entirely on this phone · powered by the Emojet model")
             .apply { gravity = Gravity.CENTER }, lp(top = 28))
 
         // Edge-to-edge (Android 15+): a solid paper band behind the status bar, content scrolls below it.
@@ -481,6 +481,10 @@ class MainActivity : Activity() {
 
     private fun versionName() = packageManager.getPackageInfo(packageName, 0).versionName
 
+    private fun versionCode() = packageManager.getPackageInfo(packageName, 0).let {
+        if (Build.VERSION.SDK_INT >= 28) it.longVersionCode else @Suppress("DEPRECATION") it.versionCode.toLong()
+    }
+
     private fun openAppInfo() = startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
 
     private fun askKeepRunning() {
@@ -513,9 +517,12 @@ class MainActivity : Activity() {
                 val info = updates.check()
                 lastInfo = info
                 when {
+                    // same version name, higher build: saying "1.0.0 is available" to someone on 1.0.0 is nonsense
+                    info.appNewer && info.versionName == info.installedVersionName ->
+                        "An updated build of ${info.versionName} is available (build ${info.versionCode})"
                     info.appNewer -> "Version ${info.versionName} is available"
                     info.modelsNewer -> "An improved model is available"
-                    else -> "You're up to date"
+                    else -> "You're up to date — ${info.installedVersionName} (build ${info.installedVersionCode})"
                 }
             }.getOrElse { "Couldn't check right now" }
             runOnUiThread {
