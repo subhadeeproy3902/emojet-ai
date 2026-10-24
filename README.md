@@ -10,7 +10,7 @@
 [![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?logo=android&logoColor=white)](#install-on-android)
 [![Size](https://img.shields.io/badge/app_8_MB_%2B_model_274_MB-282_MB_total-blue)](#how-much-space-it-takes)
 [![Model](https://img.shields.io/badge/%F0%9F%A4%97_model-Emojet_v1-ffcc4d)](https://huggingface.co/subhadeep3902/emojet)
-[![Licence](https://img.shields.io/badge/code-Apache--2.0-green)](LICENSE)
+[![Licence](https://img.shields.io/badge/code-MIT-green)](LICENSE)
 [![Offline](https://img.shields.io/badge/works-fully_offline-lightgrey)](#privacy)
 
 ### ⚠️ Installing in India, Brazil, Singapore, Thailand, Vietnam, the Philippines, Hong Kong, Kenya, Nigeria or South Africa?
@@ -225,7 +225,7 @@ model yourself on free hardware.
 
 ## Licence
 
-- **App code** (this repo): [Apache-2.0](LICENSE).
+- **App code** (this repo): [MIT](LICENSE).
 - **Emojet model weights**: CC BY-NC-SA 4.0 — free and open, non-commercial
   ([model card](https://huggingface.co/subhadeep3902/emojet)).
 - Third-party components and their licences: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

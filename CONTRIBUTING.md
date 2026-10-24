@@ -60,4 +60,4 @@ Please keep it that way; it is what keeps the APK at 8 MB.
 
 ## Licence
 
-App code is Apache-2.0 and contributions are taken under the same licence. The model weights are CC BY-NC-SA 4.0.
+App code is MIT and contributions are taken under the same licence. The model weights are CC BY-NC-SA 4.0.
